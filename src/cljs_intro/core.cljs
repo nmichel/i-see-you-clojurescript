@@ -5,7 +5,8 @@
 
 (def geom [
            {:data [0.0,0.0,640.0,0.0,640.0,360.0,0.0,360.0] :closed true}
-           {:data [100.0,50.0,540.0,50.0,540.0,260.0,100.0,260.0] :closed false}
+           {:data [100.0,50.0,540.0,50.0,540.0,160.0,100.0,160.0] :closed false}
+           {:data [200.0,170.0,300,350] :closed false}
            ])
 
 (defn- coord-list-to-point-list [data]
@@ -69,7 +70,7 @@
   (let [target (.getElementById js/document "target")
         context (.getContext target "2d")
         [drawdata eps allsegs] (build-geom-data geom)
-        o (g2d/vec2d 200 200)
+        o (g2d/vec2d 300 300)
         sorted-ep (->>
                    (reduce (fn [acc {p :point :as ep}]
                              (let [polar (g2d/->polar (g2d/minus p o))]
@@ -87,12 +88,13 @@
                              tested-segs (filter
                                           (fn [s] (not-any? #(identical? %1 s) segments)) ;; exclude segments bearing the endpoint
                                           allsegs)
-                             cols (reduce (fn [acc s]
-                                            (let [i (g2d/intersection ray s)]
-                                              (if (= i nil)
-                                                acc
-                                                (conj acc i))))
-                                          [] tested-segs)]
+                             cols (->> (reduce (fn [acc s]
+                                                 (let [i (g2d/intersection ray s)]
+                                                   (if (= i nil)
+                                                     acc
+                                                     (conj acc i))))
+                                               [] tested-segs)
+                                       (sort :f))]
                          
                          ;; compute interstion between ray and all (non bearing) segments
                          ;; [ [ray [true col]] [ray [false]] ...]
@@ -101,8 +103,6 @@
                          ))
                      sorted-ep)
         ]
-
-    ;; (println collist)
 
     ;; Draw geometry
     ;; 
