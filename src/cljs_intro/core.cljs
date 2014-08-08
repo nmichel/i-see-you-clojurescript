@@ -3,8 +3,10 @@
 
 (enable-console-print!)
 
-(def geom [{:data [0.0,0.0,640.0,0.0,640.0,360.0,0.0,360.0] :closed true}
-           {:data [100.0,50.0,540.0,50.0,540.0,260.0,100.0,260.0] :closed false}])
+(def geom [
+           {:data [0.0,0.0,640.0,0.0,640.0,360.0,0.0,360.0] :closed true}
+           {:data [100.0,50.0,540.0,50.0,540.0,260.0,100.0,260.0] :closed false}
+           ])
 
 (defn- coord-list-to-point-list [data]
   (map (fn [[x y]] (g2d/vec2d x y)) (partition 2 data)))
@@ -84,15 +86,29 @@
                        (let [ray (g2d/ray o point),
                              tested-segs (filter
                                           (fn [s] (not-any? #(identical? %1 s) segments)) ;; exclude segments bearing the endpoint
-                                          allsegs)]
+                                          allsegs)
+                             cols (reduce (fn [acc s]
+                                            (let [i (g2d/intersection ray s)]
+                                              (if (= i nil)
+                                                acc
+                                                (conj acc i))))
+                                          [] tested-segs)]
                          
-                         (map #(g2d/intersection ray %1) tested-segs) ;; compute interstion between ray and all (non bearing) segments
-                         )) sorted-ep)
+                         ;; compute interstion between ray and all (non bearing) segments
+                         ;; [ [ray [true col]] [ray [false]] ...]
+                         ;; 
+                         [ray cols]
+                         ))
+                     sorted-ep)
         ]
-    
+
+    ;; (println collist)
+
+    ;; Draw geometry
+    ;; 
     (doseq [d drawdata]
       (let [{point :point :as ep} (first d)]
-        (set! (. context -strokeStyle) "#FF0000")
+        (set! (. context -strokeStyle) "red")
         (.beginPath context)
         (.moveTo context (:x point) (:y point))
         (doseq [{point :point} (rest d)]
@@ -102,15 +118,34 @@
         (.stroke context)
         ))
     
-    
+    ;; Draw endpoints
+    ;; 
+    (doseq [{{x :x y :y} :point} eps]
+      (.beginPath context)
+      (.arc context x y 5 0 (* 2.0 Math/PI) false)
+      (set! (. context -fillStyle) "red")
+      (.fill context)
+      )
+
+    ;; Draw origin
+    ;; 
     (.beginPath context)
-    (.arc context (:x o) (:y o) 3 0 (* 2.0 Math/PI) false)
+    (.arc context (:x o) (:y o) 5 0 (* 2.0 Math/PI) false)
     (.fill context)
-    
-    (doseq [cps collist]
-      (doseq [[c data] cps]
-        (if c
-          (let [{{x :x y :y} :p} data]
+
+    ;; Draw collisions
+    ;; 
+    (doseq [[{o :o p :p :as ray} cps] collist]
+      (if (empty? cps)
+        (let [{x :x y :y} p]
+          (.beginPath context)
+          (.arc context x y 3 0 (* 2.0 Math/PI) false)
+          (set! (. context -fillStyle) "white")
+          (.fill context)
+          )
+
+        (doseq [col cps]
+          (let [{{x :x y :y} :p} col]
             (.beginPath context)
             (.arc context x y 3 0 (* 2.0 Math/PI) false)
             (set! (. context -fillStyle) "green")
@@ -121,7 +156,8 @@
       )
     )
   )
-  
+
+
 (defn ^:export init []
   (drawData))
 

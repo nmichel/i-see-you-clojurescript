@@ -65,18 +65,18 @@
         sdyslope (/ sdy smag)]
 
     (if (and (= rdxslope sdxslope)(= rdyslope sdyslope))
-      [false] ;; ray and segment are beared by // lines
+      nil ;; ray and segment are beared by // lines
       (let [t2 (/ (+ (* rdx (- spy rpy))
                      (* rdy (- rpx spx)))
                   (- (* sdx rdy) (* sdy rdx)))
             t1 (/ (- (+ spx (* sdx t2)) rpx) rdx)]
         
         (cond
-         (< t1 0) [false] ;; intersection before ray's origin
-         (< t2 0) [false] ;; intersection outside segment (before a)
-         (> t2 1) [false] ;; intersection outside segment (after b)
-         :else [true {:p (vec2d
-                          (+ rpx (* rdx t1))
-                          (+ rpy (* rdy t1)))
-                      :f t1}]
+         (< t1 0) nil ;; intersection before ray's origin
+         (< t2 0) nil ;; intersection outside segment (before a)
+         (> t2 1) nil ;; intersection outside segment (after b)
+         :else {:p (vec2d
+                    (+ rpx (* rdx t1))
+                    (+ rpy (* rdy t1)))
+                :f t1}
          )))))
