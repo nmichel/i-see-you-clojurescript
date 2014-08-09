@@ -1,5 +1,7 @@
 (ns cljs-intro.core
-  (:require [cljs-intro.g2d :as g2d]))
+  (:require [cljs-intro.g2d :as g2d]
+             [dommy.core :as dommy])
+  (:use-macros [dommy.macros :only [sel sel1]]))
 
 (enable-console-print!)
 
@@ -66,11 +68,9 @@
 
 ;; test code
 
-(defn drawData []
-  (let [target (.getElementById js/document "target")
-        context (.getContext target "2d")
-        [drawdata eps allsegs] (build-geom-data geom)
-        o (g2d/vec2d 300 300)
+(defn drawData [context ox oy]
+  (let [[drawdata eps allsegs] (build-geom-data geom)
+        o (g2d/vec2d ox oy)
         sorted-ep (->>
                    (reduce (fn [acc {p :point :as ep}]
                              (let [polar (g2d/->polar (g2d/minus p o))]
@@ -157,7 +157,14 @@
     )
   )
 
-
 (defn ^:export init []
-  (drawData))
+  (let [target (.getElementById js/document "target")
+        context (.getContext target "2d")
+        width (.-width target)
+        height (.-height target)]
+    (dommy/listen! (sel1 :canvas) :click
+                   (fn [ev]
+                     (set! (. context -fillStyle) "white")
+                     (.fillRect context 0 0 width height)
+                     (drawData context (.-x ev) (.-y ev))))))
 
