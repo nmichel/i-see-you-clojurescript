@@ -98,7 +98,7 @@
                                                      acc
                                                      (conj acc i))))
                                                [] tested-segs)
-                                       (sort :f))]
+                                       (sort-by :f))]
                          
                          ;; compute interstion between ray and all (non bearing) segments
                          ;; [ [ep ray [col col ...]] [ep ray []] ...]
