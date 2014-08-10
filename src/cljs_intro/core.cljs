@@ -68,6 +68,10 @@
 
 ;; test code
 
+(declare classify)
+(declare find-other-end)
+(declare draw-point)
+
 (defn drawData [context ox oy]
   (let [[drawdata eps allsegs] (build-geom-data geom)
         o (g2d/vec2d ox oy)
@@ -83,7 +87,7 @@
                                   (<= ta tb) true
                                   :else false)
                                  ))))
-        collist (map (fn [[polar {:keys [point segments]}]]
+        collist (map (fn [[polar {:keys [point segments] :as ep}]]
                        (let [ray (g2d/ray o point),
                              tested-segs (filter
                                           (fn [s] (not-any? #(identical? %1 s) segments)) ;; exclude segments bearing the endpoint
@@ -97,9 +101,9 @@
                                        (sort :f))]
                          
                          ;; compute interstion between ray and all (non bearing) segments
-                         ;; [ [ray [true col]] [ray [false]] ...]
+                         ;; [ [ep ray [col col ...]] [ep ray []] ...]
                          ;; 
-                         [ray cols]
+                         [ep ray cols]
                          ))
                      sorted-ep)
         ]
@@ -135,27 +139,90 @@
 
     ;; Draw collisions
     ;; 
-    (doseq [[{o :o p :p :as ray} cps] collist]
-      (if (empty? cps)
-        (let [{x :x y :y} p]
-          (.beginPath context)
-          (.arc context x y 3 0 (* 2.0 Math/PI) false)
-          (set! (. context -fillStyle) "white")
-          (.fill context)
-          )
-
-        (doseq [col cps]
-          (let [{{x :x y :y} :p} col]
-            (.beginPath context)
-            (.arc context x y 3 0 (* 2.0 Math/PI) false)
-            (set! (. context -fillStyle) "green")
-            (.fill context)
-            )
-          )
+    (doseq [[{point :point segments :segments :as ep} {o :o p :p :as ray} cps] collist]
+      (let [c (classify ray ep cps)]
+        (cond
+         (= c :nocol) (let [{x :x y :y} p]
+                        (.beginPath context)
+                        (.arc context x y 3 0 (* 2.0 Math/PI) false)
+                        (set! (. context -fillStyle) "white")
+                        (.fill context)
+                        )
+         (= c :near) (let [[col] cps]
+                      (let [{{x :x y :y} :p} col]
+                        (.beginPath context)
+                        (.arc context x y 3 0 (* 2.0 Math/PI) false)
+                        (set! (. context -fillStyle) "black")
+                        (.fill context)
+                        )
+                      )
+         (= c :eos) (let [[seg] segments ;; first (and only) segment
+                          other (find-other-end seg point) ;; find segment's end other than tested endpoint's position
+                          d (g2d/distance ray other) ;; ... distance to ray
+                          [{col-pos :p}] cps ;; nearest collision
+                          [f s] (if (> d 0) [p col-pos] [col-pos p])]
+                      (let [{x :x y :y} f]
+                        (.beginPath context)
+                        (.arc context x y 3 0 (* 2.0 Math/PI) false)
+                        (set! (. context -fillStyle) "green")
+                        (.fill context)
+                        )
+                      (let [{x :x y :y} s]
+                        (.beginPath context)
+                        (.arc context x y 3 0 (* 2.0 Math/PI) false)
+                        (set! (. context -fillStyle) "blue")
+                        (.fill context)
+                        )
+                      )
+         (= c :dual) (let [[s1 s2] segments
+                           o1 (find-other-end s1 point)
+                           o2 (find-other-end s2 point)
+                           d1 (g2d/distance ray o1)
+                           d2 (g2d/distance ray o2)
+                           [{col-pos :p}] cps]
+                       (cond
+                        (< (* d1 d2) 0) (draw-point context p "yellow") ;; each other segment ends are around the point
+                        (< 0 d1) (do (draw-point context p "green")
+                                     (draw-point context col-pos "blue"))
+                        :else (do (draw-point context col-pos "green")
+                                  (draw-point context p "blue"))
+                        )
+                       )
+         )
         )
       )
     )
   )
+
+(defn draw-point [context {x :x y :y} c]
+  (.beginPath context)
+  (.arc context x y 3 0 (* 2.0 Math/PI) false)
+  (set! (. context -fillStyle) c)
+  (.fill context)
+  )
+
+(defn find-other-end [{:keys [a b]} p]
+  (cond
+   (identical? a p) b
+   (identical? b p) a
+   :else (.log js/console "ERROR (find-other-end) : nor a neither b is p")
+   )
+  )
+
+(defn classify [{o :o p :p}   ;; ray
+                {s :segments} ;; endpoint
+                cols]         ;; collisions
+  (if (empty? cols)
+    :nocol
+    (let [[{t :f} & more] cols] ;; extract nearest collision
+      (if (< t 1)
+        :near
+        (if (= 1(count s)) ;; endpoint end of segment ?
+          :eos
+          :dual
+          )
+      )
+   )))
 
 (defn ^:export init []
   (let [target (.getElementById js/document "target")

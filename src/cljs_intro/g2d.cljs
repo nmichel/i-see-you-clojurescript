@@ -91,3 +91,13 @@
                     :f t1})
             )
         )))))
+
+(defn distance [{{x1 :x y1 :y :as a} :o {x2 :x y2 :y :as b} :p}
+                {x0 :x y0 :y :as m}]
+  (let [{dx21 :x dy21 :y :as vab} (minus b a)
+        {dx10 :x dy10 :y} (minus a m)
+        normab (magnitude vab)]
+    (/ (- (* dx21 dy10)(* dx10 dy21))
+       normab)
+    )
+  )
