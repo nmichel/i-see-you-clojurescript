@@ -142,37 +142,16 @@
     (doseq [[{point :point segments :segments :as ep} {o :o p :p :as ray} cps] collist]
       (let [c (classify ray ep cps)]
         (cond
-         (= c :nocol) (let [{x :x y :y} p]
-                        (.beginPath context)
-                        (.arc context x y 3 0 (* 2.0 Math/PI) false)
-                        (set! (. context -fillStyle) "white")
-                        (.fill context)
-                        )
+         (= c :nocol) (draw-point context p "white")
          (= c :near) (let [[col] cps]
-                      (let [{{x :x y :y} :p} col]
-                        (.beginPath context)
-                        (.arc context x y 3 0 (* 2.0 Math/PI) false)
-                        (set! (. context -fillStyle) "black")
-                        (.fill context)
-                        )
-                      )
+                       (draw-point context (:p col) "black"))
          (= c :eos) (let [[seg] segments ;; first (and only) segment
                           other (find-other-end seg point) ;; find segment's end other than tested endpoint's position
                           d (g2d/distance ray other) ;; ... distance to ray
                           [{col-pos :p}] cps ;; nearest collision
                           [f s] (if (> d 0) [p col-pos] [col-pos p])]
-                      (let [{x :x y :y} f]
-                        (.beginPath context)
-                        (.arc context x y 3 0 (* 2.0 Math/PI) false)
-                        (set! (. context -fillStyle) "green")
-                        (.fill context)
-                        )
-                      (let [{x :x y :y} s]
-                        (.beginPath context)
-                        (.arc context x y 3 0 (* 2.0 Math/PI) false)
-                        (set! (. context -fillStyle) "blue")
-                        (.fill context)
-                        )
+                      (draw-point context f "green")
+                      (draw-point context s "blue")
                       )
          (= c :dual) (let [[s1 s2] segments
                            o1 (find-other-end s1 point)
