@@ -108,9 +108,6 @@
                      sorted-ep)
         ]
 
-    ;; Draw collisions
-    ;; 
-    
     (let [pts (reduce (fn [acc [{point :point segments :segments :as ep} {o :o p :p :as ray} cps]]
                         (let [c (classify ray ep cps)]
                           (cond
@@ -140,22 +137,45 @@
                         )
                       []  collist)]
 
-      (let [[[f color] & more] pts
-            grd (.createRadialGradient context ox oy 50 ox oy 300)]
-        (.addColorStop grd 0 "yellow")
-        (.addColorStop grd 1 "white")
-        (.beginPath context)
-        (.moveTo context (:x f) (:y f))
-        (doseq [[p color] more]
-          (.lineTo context (:x p) (:y p))
+      (let [poly-count (count pts)
+            pts-source (cycle pts)]
+        (loop [cnt poly-count
+               pts pts-source]
+          (if (= 0 cnt)
+            nil
+            (let [[[a] & tail] pts
+                  [[b]] tail]
+              (.moveTo context ox oy)
+              (.lineTo context (:x a) (:y a))
+              (.lineTo context (:x b) (:y b))
+              (set! (. context -fillStyle) "yellow")
+              (.fill context)
+              (recur (- cnt 1) tail)
+              ))
           )
-        (.lineTo context (:x f) (:y f))
-        (set! (. context -fillStyle) "yellow")
-        ;(set! (. context -fillStyle) grd)
-        (.fill context)
+        )
+      
+      ;; (let [[[f color] & more] pts
+      ;;       grd (.createRadialGradient context ox oy 50 ox oy 300)]
+      ;;   (.addColorStop grd 0 "yellow")
+      ;;   (.addColorStop grd 1 "white")
+      ;;   (.beginPath context)
+      ;;   (.moveTo context (:x f) (:y f))
+      ;;   (doseq [[p color] more]
+      ;;     (.lineTo context (:x p) (:y p))
+      ;;     )
+      ;;   (.lineTo context (:x f) (:y f))
+      ;;   (set! (. context -fillStyle) "yellow")
+      ;;   ;(set! (. context -fillStyle) grd)
+      ;;   (.fill context)
+      ;;   )
+
+      ;; Draw collisions
+      ;; 
+      (doseq [[f color] pts]
+        (draw-point context f color)
         )
       )
-  
 
     ;; Draw geometry
     ;; 
