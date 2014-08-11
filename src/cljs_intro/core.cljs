@@ -108,6 +108,55 @@
                      sorted-ep)
         ]
 
+    ;; Draw collisions
+    ;; 
+    
+    (let [pts (reduce (fn [acc [{point :point segments :segments :as ep} {o :o p :p :as ray} cps]]
+                        (let [c (classify ray ep cps)]
+                          (cond
+                           (= c :nocol) (conj acc [p "white"])
+                           (= c :near) (let [[col] cps]
+                                         (conj acc [(:p col) "black"]))
+                           (= c :eos) (let [[seg] segments ;; first (and only) segment
+                                            other (find-other-end seg point) ;; find segment's end other than tested endpoint's position
+                                            d (g2d/distance ray other) ;; ... distance to ray
+                                            [{col-pos :p}] cps ;; nearest collision
+                                            [f s] (if (< d 0) [p col-pos] [col-pos p])]
+                                        (into acc [[f "green"] [s "blue"]]))
+                           (= c :dual) (let [[s1 s2] segments
+                                             o1 (find-other-end s1 point)
+                                             o2 (find-other-end s2 point)
+                                             d1 (g2d/distance ray o1)
+                                             d2 (g2d/distance ray o2)
+                                   [{col-pos :p}] cps]
+                                         (cond
+                                          (< (* d1 d2) 0) (conj acc [p "yellow"]) ;; each other segment ends are around the point
+                                          (> 0 d1) (into acc [[p "green"] [col-pos "blue"]])
+                                          :else (into acc [[col-pos "green"] [p "blue"]])
+                                          )
+                                         )
+                           )
+                          )
+                        )
+                      []  collist)]
+
+      (let [[[f color] & more] pts
+            grd (.createRadialGradient context ox oy 50 ox oy 300)]
+        (.addColorStop grd 0 "yellow")
+        (.addColorStop grd 1 "white")
+        (.beginPath context)
+        (.moveTo context (:x f) (:y f))
+        (doseq [[p color] more]
+          (.lineTo context (:x p) (:y p))
+          )
+        (.lineTo context (:x f) (:y f))
+        (set! (. context -fillStyle) "yellow")
+        ;(set! (. context -fillStyle) grd)
+        (.fill context)
+        )
+      )
+  
+
     ;; Draw geometry
     ;; 
     (doseq [d drawdata]
@@ -123,53 +172,20 @@
         ))
     
     ;; Draw endpoints
-    ;; 
+    ;;
     (doseq [{{x :x y :y} :point} eps]
       (.beginPath context)
       (.arc context x y 5 0 (* 2.0 Math/PI) false)
       (set! (. context -fillStyle) "red")
       (.fill context)
       )
-
+    
     ;; Draw origin
     ;; 
     (.beginPath context)
+    (set! (. context -fillStyle) "red")
     (.arc context (:x o) (:y o) 5 0 (* 2.0 Math/PI) false)
     (.fill context)
-
-    ;; Draw collisions
-    ;; 
-    (doseq [[{point :point segments :segments :as ep} {o :o p :p :as ray} cps] collist]
-      (let [c (classify ray ep cps)]
-        (cond
-         (= c :nocol) (draw-point context p "white")
-         (= c :near) (let [[col] cps]
-                       (draw-point context (:p col) "black"))
-         (= c :eos) (let [[seg] segments ;; first (and only) segment
-                          other (find-other-end seg point) ;; find segment's end other than tested endpoint's position
-                          d (g2d/distance ray other) ;; ... distance to ray
-                          [{col-pos :p}] cps ;; nearest collision
-                          [f s] (if (> d 0) [p col-pos] [col-pos p])]
-                      (draw-point context f "green")
-                      (draw-point context s "blue")
-                      )
-         (= c :dual) (let [[s1 s2] segments
-                           o1 (find-other-end s1 point)
-                           o2 (find-other-end s2 point)
-                           d1 (g2d/distance ray o1)
-                           d2 (g2d/distance ray o2)
-                           [{col-pos :p}] cps]
-                       (cond
-                        (< (* d1 d2) 0) (draw-point context p "yellow") ;; each other segment ends are around the point
-                        (< 0 d1) (do (draw-point context p "green")
-                                     (draw-point context col-pos "blue"))
-                        :else (do (draw-point context col-pos "green")
-                                  (draw-point context p "blue"))
-                        )
-                       )
-         )
-        )
-      )
     )
   )
 
@@ -208,7 +224,7 @@
         context (.getContext target "2d")
         width (.-width target)
         height (.-height target)]
-    (dommy/listen! (sel1 :canvas) :click
+    (dommy/listen! (sel1 :canvas) :mousemove
                    (fn [ev]
                      (set! (. context -fillStyle) "white")
                      (.fillRect context 0 0 width height)
