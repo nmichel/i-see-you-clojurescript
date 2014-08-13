@@ -1,17 +1,12 @@
 (ns cljs-intro.core
   (:require [cljs-intro.g2d :as g2d]
+            [cljs-intro.data :as data]
             [dommy.core :as dommy])
   (:use-macros [dommy.macros :only [sel sel1]]))
 
 (enable-console-print!)
 
-(def geom [
-           {:data [0.0,0.0,640.0,0.0,640.0,360.0,0.0,360.0] :closed true}
-           {:data [100.0,50.0,540.0,50.0
-                   ,540.0,160.0,100.0,160.0
-                   ] :closed false}
-           {:data [200.0,190.0,300,350] :closed false}
-           ])
+(def geom (data/produce-stress-test-data-set-2))
 
 (defn- coord-list-to-point-list [data]
   (map (fn [[x y]] (g2d/vec2d x y)) (partition 2 data)))
@@ -363,7 +358,6 @@
       )) 
    )
   )
-
 
 (defn drawData
   [context ox oy]
