@@ -86,6 +86,8 @@
 
 (defn distance [{{x1 :x y1 :y :as a} :o {x2 :x y2 :y :as b} :p}
                 {x0 :x y0 :y :as m}]
+  "Return the distance from point m to ray [o p]
+  "
   (let [{dx21 :x dy21 :y :as vab} (minus b a)
         {dx10 :x dy10 :y} (minus a m)
         normab (magnitude vab)]
@@ -93,3 +95,10 @@
        normab)
     )
   )
+
+(defn ratio
+  [{{x1 :x y1 :y :as a} :o {x2 :x y2 :y :as b} :p}
+   {x0 :x y0 :y :as m}]
+  (let [op (minus b a)
+        om (minus m a)]
+    (/ (magnitude om) (magnitude op))))

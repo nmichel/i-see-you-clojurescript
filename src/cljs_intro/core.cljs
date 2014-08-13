@@ -1,6 +1,6 @@
 (ns cljs-intro.core
   (:require [cljs-intro.g2d :as g2d]
-             [dommy.core :as dommy])
+            [dommy.core :as dommy])
   (:use-macros [dommy.macros :only [sel sel1]]))
 
 (enable-console-print!)
@@ -8,9 +8,9 @@
 (def geom [
            {:data [0.0,0.0,640.0,0.0,640.0,360.0,0.0,360.0] :closed true}
            {:data [100.0,50.0,540.0,50.0
-                   ; ,540.0,160.0,100.0,160.0
+                   ,540.0,160.0,100.0,160.0
                    ] :closed false}
-           ;{:data [200.0,170.0,300,350] :closed false}
+           {:data [200.0,190.0,300,350] :closed false}
            ])
 
 (defn- coord-list-to-point-list [data]
@@ -70,7 +70,6 @@
 
 ;; test code
 
-
 (defn draw-point [context {x :x y :y} c]
   (.beginPath context)
   (.arc context x y 3 0 (* 2.0 Math/PI) false)
@@ -82,7 +81,6 @@
   (cond
    (identical? a p) b
    (identical? b p) a
-   :else (.log js/console "ERROR (find-other-end) : nor a neither b is p")
    )
   )
 
@@ -117,20 +115,194 @@
                  ))))
   )
 
+(defn compute-ray-segments-intersections
+  [ray segments]
+  (->> segments
+       (reduce (fn [acc s]
+                 (let [i (g2d/intersection ray s)]
+                   (if (= i nil)
+                     acc
+                     (conj acc i))))
+               [])
+       (sort-by :f)))
+
+(defn- is-segment-bearing-endpoint
+  [seg ep]
+  (some #(identical? %1 seg) (:segments ep)))
+
+(defn- is-segment-bearing-some-endpoints
+  [eps seg]
+  (some (partial is-segment-bearing-endpoint seg) eps))
+
+(defn compute-non-bearing-segments-list
+  [eps segs]
+  (filter #(not (is-segment-bearing-some-endpoints eps %1)) segs))
+
+(defn- classify-final-endpoint
+  [ray {:keys [point segments]}]
+  (let [[s] segments ;; only one segment bears the endpoint
+        o   (find-other-end s point)
+        d   (g2d/distance ray o)]
+
+    (cond
+     (= 0 d) :collinear
+     (> 0 d) :out
+     (< 0 d) :in
+     )
+   )
+  )
+
+(defn- classify-internal-endpoint
+  [ray {:keys [point segments]}]
+  (let [[s1 s2] segments ;; two segment bear the endpoint
+        o1      (find-other-end s1 point)
+        o2      (find-other-end s2 point)
+        d1      (g2d/distance ray o1)
+        d2      (g2d/distance ray o2)]
+
+    (cond
+     (and (= 0 d1)(= 0 d2)) :collinear
+     (< (* d1 d2) 0)        :cross
+     (or (> 0 d1)(> 0 d2))  :out
+     (or (< 0 d1)(< 0 d2))  :in
+     )
+   )
+  )
+
+(defn- classify-endpoint
+  [ray {:keys [segments] :as ep}]
+  (if (= 1 (count segments))
+    (classify-final-endpoint ray ep)
+    (classify-internal-endpoint ray ep)
+    ))
+
+(defn- process-one-endpoint
+  [{:keys [point] :as ep} segments o]
+  (let [ray          (g2d/ray o point)
+        tested-segs  (compute-non-bearing-segments-list [ep] segments)
+        [c :as cols] (compute-ray-segments-intersections ray tested-segs) ; c is nil when (empty? cols) is true
+        classif      (classify-endpoint ray ep)]
+    (cond
+     (empty? cols)      [[point "white"]]
+     (< (:f c) 1)       [[(:p c) "black"]]
+     (= classif :cross) [[point "yellow"]]
+     (= classif :in)    [[(:p c) "green"] [point "blue"]]
+     (= classif :out)   [[point "green"] [(:p c) "blue"]]
+     )
+    )
+  )
+
+(defn- process-many-endpoint
+  [[{:keys [point]} :as eps] segments o]
+  (let [ray                    (g2d/ray o point) ;; use the first point as origin of the ray
+        eps-with-classif       (map (fn[e] [(classify-endpoint ray e) e]) eps) ;; ( [classif ep] [classif ep] ... )
+        eps-wo-first-collinear (drop-while #(= :collinear (nth %1 0)) eps-with-classif)]
+
+    (cond
+     ;; all endpoints are collinear : no point produced
+     ;;
+     (empty? eps-wo-first-collinear) []
+
+     ;; General case : at least one active endpoint
+     ;; 
+     :else (let [tested-segs     (compute-non-bearing-segments-list eps segments) ;; only segments not bearing any endpoint
+                 [col :as cols]  (compute-ray-segments-intersections ray tested-segs) ;; c is nil when (empty? cols) is true
+                 [c1 ep1 :as e1] (first eps-wo-first-collinear)]
+
+             (cond
+              ;; There is at least a collision, and the nearest if before the first ep
+              ;; 
+              (and (not (nil? col)) (< (:f col) 1)) [[(:p col) "black"]]
+
+              ;; The first ep is :cross
+              ;;
+              (= :cross c1) [[(:point ep1) "white"]]
+                                          
+              ;; First ep is :out
+              ;; Search for first :in or :cross (is any)
+              ;; 
+              (= :out c1) (let [[c2 p2] (first (filter (fn[[c2]] (or (= :in c2)(= :cross c2))) (rest eps-wo-first-collinear)))]
+                            (cond
+                             ;; No closing ep found
+                             ;; 
+                             (nil? c2) (cond
+                                        ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
+                                        ;; 
+                                        (nil? col) [[(:point ep1) "white"]]
+                                        ;; no closing, but a col
+                                        ;; 
+                                        :else [[(:point ep1) "green"] [(:p col) "blue"]]
+                                        )
+
+                            ;; A closing ep and no col
+                            ;; 
+                            (nil? col) [[(:point ep1) "green"] [(:point p2) "blue"]]
+
+                             ;; A closing ep. Depending on the relative positions of the closing point and the
+                             ;; closest collision, use one or the other as the second point
+                             ;; 
+                             :else (let [r2 (g2d/ratio ray (:point p2))
+                                         p (if (< (:f col) r2) (:p col) (:point p2))]
+                                     [[(:point ep1) "green"] [p "blue"]])
+                             )
+                            )
+
+              ;; First ep is :in
+              ;; Search for first :out or :cross (is any)
+              ;; 
+              (= :in c1) (let [[c2 p2] (first (filter (fn[[c2]] (or (= :out c2)(= :cross c2))) (rest eps-wo-first-collinear)))]
+                           (cond
+                            ;; No closing ep found
+                            ;; 
+                            (nil? c2) (cond
+                                       ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
+                                       ;; 
+                                       (nil? col) [[(:point ep1) "white"]]
+                                       ;; no closing, but a col
+                                       ;; 
+                                       :else [[(:p col) "green"] [(:point ep1) "blue"]]
+                                       )
+
+                            ;; A closing ep and no col
+                            ;; 
+                            (nil? col) [[(:point p2) "green"] [(:point ep1) "blue"]]
+
+                             ;; A closing ep. Depending on the relative positions of the closing point and the
+                             ;; closest collision, use one or the other as the second point
+                             ;; 
+                             :else (let [r2 (g2d/ratio ray (:point p2))
+                                         p (if (< (:f col) r2) (:p col) (:point p2))]
+                                     [[p "green"] [(:point ep1) "blue"]])
+                             )
+                           )
+              )
+             )
+     )
+    )
+  )
+
+(defn compute-light-hull
+  [eps-by-angle segments o]
+
+  (reduce (fn [acc [angle [ep :as eps]]]
+            (->>
+             (cond
+              (= 1 (count eps)) (process-one-endpoint ep segments o)
+              :else             (process-many-endpoint eps segments o)
+              )
+             (into acc)
+             )
+            )
+          []
+          eps-by-angle)
+  )
+
 (defn compute-intersections
   [sorted-ep allsegs o]
   (map (fn [[polar {:keys [point segments] :as ep}]]
-         (let [ray (g2d/ray o point),
-               tested-segs (filter
-                            (fn [s] (not-any? #(identical? %1 s) segments)) ;; exclude segments bearing the endpoint
-                            allsegs)
-               cols (->> (reduce (fn [acc s]
-                                   (let [i (g2d/intersection ray s)]
-                                     (if (= i nil)
-                                       acc
-                                       (conj acc i))))
-                                 [] tested-segs)
-                         (sort-by :f))]
+         (let [ray         (g2d/ray o point),
+               tested-segs (compute-non-bearing-segments-list [ep] allsegs)
+               cols        (compute-ray-segments-intersections ray tested-segs)]
            
            ;; compute interstion between ray and all (non bearing) segments
            ;; [ [ep ray [col col ...]] [ep ray []] ...]
@@ -200,9 +372,30 @@
         sorted-ep              (sort-endpoints-by-angle eps o)
         eps-by-angle           (group-endpoints-by-angle sorted-ep)
         collist                (compute-intersections sorted-ep allsegs o)
-        pts                    (produce-light-hull collist)]
+        pts0                   (produce-light-hull collist)
+        pts                    (compute-light-hull eps-by-angle allsegs o)]
 
-    (println "eps-by-angle " eps-by-angle)
+    (let [poly-count (count pts)
+          pts-source (cycle pts)
+          grd (.createRadialGradient context ox oy 50 ox oy 500)]
+      (.addColorStop grd 0 "yellow")
+      (.addColorStop grd 1 "white")
+      (loop [cnt poly-count
+             pts pts-source]
+        (if (= 0 cnt)
+          nil
+          (let [[[a] & tail] pts
+                [[b]] tail]
+            (.moveTo context ox oy)
+            (.lineTo context (:x a) (:y a))
+            (.lineTo context (:x b) (:y b))
+            (set! (. context -fillStyle) grd)
+;;            (set! (. context -fillStyle) "yellow")
+;;            (set! (. context -strokeStyle) "yellow")
+            (.fill context)
+            (recur (- cnt 1) tail)
+            ))
+        ))
     
     ;; Draw geometry
     ;; 
@@ -217,47 +410,13 @@
           (.lineTo context (:x point) (:y point)))
         (.stroke context)
         ))
-    
-    (let [poly-count (count pts)
-          pts-source (cycle pts)]
-      (loop [cnt poly-count
-             pts pts-source]
-        (if (= 0 cnt)
-          nil
-          (let [[[a] & tail] pts
-                [[b]] tail]
-            (.moveTo context ox oy)
-            (.lineTo context (:x a) (:y a))
-            (.lineTo context (:x b) (:y b))
-            ; (set! (. context -fillStyle) "yellow")
-            (set! (. context -strokeStyle) "yellow")
-            (.stroke context)
-            (recur (- cnt 1) tail)
-            ))
-        ))
-    
-    ;; (let [[[f color] & more] pts
-    ;;       grd (.createRadialGradient context ox oy 50 ox oy 300)]
-    ;;   (.addColorStop grd 0 "yellow")
-    ;;   (.addColorStop grd 1 "white")
-    ;;   (.beginPath context)
-    ;;   (.moveTo context (:x f) (:y f))
-    ;;   (doseq [[p color] more]
-    ;;     (.lineTo context (:x p) (:y p))
-    ;;     )
-    ;;   (.lineTo context (:x f) (:y f))
-    ;;   (set! (. context -fillStyle) "yellow")
-    ;;   ;(set! (. context -fillStyle) grd)
-    ;;   (.fill context)
-    ;;   )
-    
+
     ;; Draw collisions
     ;; 
     (doseq [[f color] pts]
       (draw-point context f color)
       )
-    
-    
+
     ;; Draw endpoints
     ;;
     (doseq [{{x :x y :y} :point} eps]
@@ -285,6 +444,5 @@
                    (fn [ev]
                      (set! (. context -fillStyle) "white")
                      (.fillRect context 0 0 width height)
-                     (println (.-x ev) (.-y ev))
                      (drawData context (.-x ev) (.-y ev))))))
 
