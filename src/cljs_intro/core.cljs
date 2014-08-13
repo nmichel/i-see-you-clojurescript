@@ -7,8 +7,10 @@
 
 (def geom [
            {:data [0.0,0.0,640.0,0.0,640.0,360.0,0.0,360.0] :closed true}
-           {:data [100.0,50.0,540.0,50.0,540.0,160.0,100.0,160.0] :closed false}
-           {:data [200.0,170.0,300,350] :closed false}
+           {:data [100.0,50.0,540.0,50.0
+                   ; ,540.0,160.0,100.0,160.0
+                   ] :closed false}
+           ;{:data [200.0,170.0,300,350] :closed false}
            ])
 
 (defn- coord-list-to-point-list [data]
@@ -170,54 +172,38 @@
           [] collist)
   )
 
+(defn group-endpoints-by-angle [[[first-polar  first-ep] & tail]]
+  "
+  [[angle [ep ...] [angle [ep ...]]]
+  "
+  (->>
+   (reduce (fn [[out [current-angle eps-vec :as acc]] [next-polar next-ep]]
+             (cond
+              (= current-angle (:theta next-polar)) [out [current-angle (conj eps-vec next-ep)]]     ;; same angle, add ep to acc
+              :else                                 [(conj out acc) [(:theta next-polar) [next-ep]]] ;; add acc to out, new acc from current ep
+              )
+             )
+           [[]                                 ;; res empty at start
+            [(:theta first-polar) [first-ep]]] ;; init acc with first endpoint
+           tail)
+   ((fn [[out acc]]
+      (conj out acc)
+      )) 
+   )
+  )
+
+
 (defn drawData
   [context ox oy]
   (let [[drawdata eps allsegs] (build-geom-data geom)
         o                      (g2d/vec2d ox oy)
         sorted-ep              (sort-endpoints-by-angle eps o)
+        eps-by-angle           (group-endpoints-by-angle sorted-ep)
         collist                (compute-intersections sorted-ep allsegs o)
         pts                    (produce-light-hull collist)]
 
-      (let [poly-count (count pts)
-            pts-source (cycle pts)]
-        (loop [cnt poly-count
-               pts pts-source]
-          (if (= 0 cnt)
-            nil
-            (let [[[a] & tail] pts
-                  [[b]] tail]
-              (.moveTo context ox oy)
-              (.lineTo context (:x a) (:y a))
-              (.lineTo context (:x b) (:y b))
-              (set! (. context -fillStyle) "yellow")
-              (.fill context)
-              (recur (- cnt 1) tail)
-              ))
-          )
-        )
-      
-      ;; (let [[[f color] & more] pts
-      ;;       grd (.createRadialGradient context ox oy 50 ox oy 300)]
-      ;;   (.addColorStop grd 0 "yellow")
-      ;;   (.addColorStop grd 1 "white")
-      ;;   (.beginPath context)
-      ;;   (.moveTo context (:x f) (:y f))
-      ;;   (doseq [[p color] more]
-      ;;     (.lineTo context (:x p) (:y p))
-      ;;     )
-      ;;   (.lineTo context (:x f) (:y f))
-      ;;   (set! (. context -fillStyle) "yellow")
-      ;;   ;(set! (. context -fillStyle) grd)
-      ;;   (.fill context)
-      ;;   )
-
-      ;; Draw collisions
-      ;; 
-      (doseq [[f color] pts]
-        (draw-point context f color)
-        )
-      
-
+    (println "eps-by-angle " eps-by-angle)
+    
     ;; Draw geometry
     ;; 
     (doseq [d drawdata]
@@ -231,6 +217,46 @@
           (.lineTo context (:x point) (:y point)))
         (.stroke context)
         ))
+    
+    (let [poly-count (count pts)
+          pts-source (cycle pts)]
+      (loop [cnt poly-count
+             pts pts-source]
+        (if (= 0 cnt)
+          nil
+          (let [[[a] & tail] pts
+                [[b]] tail]
+            (.moveTo context ox oy)
+            (.lineTo context (:x a) (:y a))
+            (.lineTo context (:x b) (:y b))
+            ; (set! (. context -fillStyle) "yellow")
+            (set! (. context -strokeStyle) "yellow")
+            (.stroke context)
+            (recur (- cnt 1) tail)
+            ))
+        ))
+    
+    ;; (let [[[f color] & more] pts
+    ;;       grd (.createRadialGradient context ox oy 50 ox oy 300)]
+    ;;   (.addColorStop grd 0 "yellow")
+    ;;   (.addColorStop grd 1 "white")
+    ;;   (.beginPath context)
+    ;;   (.moveTo context (:x f) (:y f))
+    ;;   (doseq [[p color] more]
+    ;;     (.lineTo context (:x p) (:y p))
+    ;;     )
+    ;;   (.lineTo context (:x f) (:y f))
+    ;;   (set! (. context -fillStyle) "yellow")
+    ;;   ;(set! (. context -fillStyle) grd)
+    ;;   (.fill context)
+    ;;   )
+    
+    ;; Draw collisions
+    ;; 
+    (doseq [[f color] pts]
+      (draw-point context f color)
+      )
+    
     
     ;; Draw endpoints
     ;;
@@ -259,5 +285,6 @@
                    (fn [ev]
                      (set! (. context -fillStyle) "white")
                      (.fillRect context 0 0 width height)
+                     (println (.-x ev) (.-y ev))
                      (drawData context (.-x ev) (.-y ev))))))
 

@@ -22,6 +22,14 @@
   ([a b]
      (magnitude (minus a b))))
 
+(defn scale
+  [{x :x y :y} f]
+  (vec2d (* x f) (* y f)))
+
+(defn cross
+  [{ax :x ay :y} {bx :x by :y}]
+  (- (* ax by) (* ay bx)))
+
 (declare polar)
 
 (defn ->polar
@@ -54,43 +62,27 @@
   {:o o :p p})
 
 (defn intersection
+  ;; http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+  ;; https://github.com/pgkelley4/line-segments-intersect/blob/master/js/line-segments-intersect.js
+  ;; 
   [{{rpx :x rpy :y :as ra} :o rb :p} {{spx :x spy :y :as sega} :a segb :b}]
-  (let [{rdx :x rdy :y :as rd} (minus rb ra)
-        {sdx :x sdy :y :as sd} (minus segb sega)
-        rmag (magnitude rd) ;; check magnitudes. Can't be 0
-        smag (magnitude sd)
-        rdxslope (/ rdx rmag)
-        sdxslope (/ sdx smag)
-        rdyslope (/ rdy rmag)
-        sdyslope (/ sdy smag)]
-
-    (if (and (= rdxslope sdxslope)(= rdyslope sdyslope))
-      nil ;; ray and segment are beared by // lines
-      (let [t2 (/ (+ (* rdx (- spy rpy))
-                     (* rdy (- rpx spx)))
-                  (- (* sdx rdy) (* sdy rdx)))] ;; What if a divide-by-0 occurs when computing t2 ?
-
-        (if (= 0 rdx)
-          (cond
-           (< t2 0) nil ;; intersection outside segment (before a)
-           (> t2 1) nil ;; intersection outside segment (after b)
-           :else (let [i     (vec2d (+ spx (* sdx t2)) (+ spy (* sdy t2)))
-                       oimag (magnitude (minus i ra))]
-                   {:p i
-                    :f (/ oimag rmag)}) ;; compute the offet of i on the ray (cannot use t1, of course)
-           )
-          
-          (let [t1 (/ (- (+ spx (* sdx t2)) rpx) rdx)]
-            (cond
-             (< t1 0) nil ;; intersection before ray's origin
-             (< t2 0) nil ;; intersection outside segment (before a)
-             (> t2 1) nil ;; intersection outside segment (after b)
-             :else {:p (vec2d
-                        (+ rpx (* rdx t1))
-                        (+ rpy (* rdy t1)))
-                    :f t1})
-            )
-        )))))
+  (let [r (minus rb ra)
+        s (minus segb sega)
+        uNumerator (cross (minus sega ra) r)
+        denominator (cross r s)]
+    
+    (cond
+     (and (= 0 uNumerator) (= 0 denominator)) nil
+     (= 0 denominator) nil
+     :else (let [u (/ uNumerator denominator)
+                 t (/ (cross (minus sega  ra) s) denominator)]
+             (if (and (>= t 0) (>= u 0) (<= u 1))
+               {:p (plus ra (scale r t)) :f t}
+               nil)
+             )
+     )
+    )
+  )
 
 (defn distance [{{x1 :x y1 :y :as a} :o {x2 :x y2 :y :as b} :p}
                 {x0 :x y0 :y :as m}]
