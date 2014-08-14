@@ -1,5 +1,6 @@
 (ns cljs-intro.core
   (:require [cljs-intro.g2d :as g2d]
+            [cljs-intro.draw :as draw]
             [cljs-intro.data :as data]
             [dommy.core :as dommy])
   (:use-macros [dommy.macros :only [sel sel1]]))
@@ -66,38 +67,14 @@
               [(conj adraw eps) (into aeps eps) (into asegs segs)]))
           [[] [] []] data))
 
-;; test code
-
-(defn draw-point [context {x :x y :y} c]
-  (.beginPath context)
-  (.arc context x y 3 0 (* 2.0 Math/PI) false)
-  (set! (. context -fillStyle) c)
-  (.fill context)
-  )
-
-(defn find-other-end [{:keys [a b]} p]
+(defn- find-other-end [{:keys [a b]} p]
   (cond
    (identical? a p) b
    (identical? b p) a
    )
   )
 
-(defn classify [{o :o p :p}   ;; ray
-                {s :segments} ;; endpoint
-                cols]         ;; collisions
-  (if (empty? cols)
-    :nocol
-    (let [[{t :f} & more] cols] ;; extract nearest collision
-      (if (< t 1)
-        :near
-        (if (= 1(count s)) ;; endpoint end of segment ?
-          :eos
-          :dual
-          )
-      )
-   )))
-
-(defn sort-endpoints-by-angle
+(defn- sort-endpoints-by-angle
   [eps o]
   (->>
    (reduce (fn [acc {p :point :as ep}]
@@ -113,7 +90,7 @@
                  ))))
   )
 
-(defn compute-ray-segments-intersections
+(defn- compute-ray-segments-intersections
   [ray segments]
   (->> segments
        (reduce (fn [acc s]
@@ -146,8 +123,7 @@
      (= 0 d) :collinear
      (> 0 d) :out
      (< 0 d) :in
-     )
-   )
+     ))
   )
 
 (defn- classify-internal-endpoint
@@ -157,14 +133,12 @@
         o2      (find-other-end s2 point)
         d1      (g2d/distance ray o1)
         d2      (g2d/distance ray o2)]
-
     (cond
      (and (= 0 d1)(= 0 d2)) :collinear
      (< (* d1 d2) 0)        :cross
      (or (> 0 d1)(> 0 d2))  :out
      (or (< 0 d1)(< 0 d2))  :in
-     )
-   )
+     ))
   )
 
 (defn- classify-endpoint
@@ -195,7 +169,6 @@
   (let [ray                    (g2d/ray o point) ;; use the first point as origin of the ray
         eps-with-classif       (map (fn[e] [(classify-endpoint ray e) e]) eps) ;; ( [classif ep] [classif ep] ... )
         eps-wo-first-collinear (drop-while #(= :collinear (nth %1 0)) eps-with-classif)]
-
     (cond
      ;; all endpoints are collinear : no point produced
      ;;
@@ -279,70 +252,7 @@
     )
   )
 
-(defn compute-light-hull
-  [eps-by-angle segments o]
-
-  (reduce (fn [acc [angle [ep :as eps]]]
-            (->>
-             (cond
-              (= 1 (count eps)) (process-one-endpoint ep segments o)
-              :else             (process-many-endpoint eps segments o)
-              )
-             (into acc)
-             )
-            )
-          []
-          eps-by-angle)
-  )
-
-(defn compute-intersections
-  [sorted-ep allsegs o]
-  (map (fn [[polar {:keys [point segments] :as ep}]]
-         (let [ray         (g2d/ray o point),
-               tested-segs (compute-non-bearing-segments-list [ep] allsegs)
-               cols        (compute-ray-segments-intersections ray tested-segs)]
-           
-           ;; compute interstion between ray and all (non bearing) segments
-           ;; [ [ep ray [col col ...]] [ep ray []] ...]
-           ;; 
-           [ep ray cols]
-           ))
-       sorted-ep)
-  )
-
-(defn produce-light-hull
-  [collist]
-  (reduce (fn [acc [{point :point segments :segments :as ep} {o :o p :p :as ray} cps]]
-            (let [c (classify ray ep cps)]
-              (cond
-               (= c :nocol) (conj acc [p "white"])
-               (= c :near) (let [[col] cps]
-                             (conj acc [(:p col) "black"]))
-               (= c :eos) (let [[seg] segments ;; first (and only) segment
-                                other (find-other-end seg point) ;; find segment's end other than tested endpoint's position
-                                d (g2d/distance ray other) ;; ... distance to ray
-                                [{col-pos :p}] cps ;; nearest collision
-                                [f s] (if (< d 0) [p col-pos] [col-pos p])]
-                            (into acc [[f "green"] [s "blue"]]))
-               (= c :dual) (let [[s1 s2] segments
-                                 o1 (find-other-end s1 point)
-                                 o2 (find-other-end s2 point)
-                                 d1 (g2d/distance ray o1)
-                                 d2 (g2d/distance ray o2)
-                                 [{col-pos :p}] cps]
-                             (cond
-                              (< (* d1 d2) 0) (conj acc [p "yellow"]) ;; each other segment ends are around the point
-                              (> 0 d1) (into acc [[p "green"] [col-pos "blue"]])
-                              :else (into acc [[col-pos "green"] [p "blue"]])
-                              )
-                             )
-               )
-              )
-            )
-          [] collist)
-  )
-
-(defn group-endpoints-by-angle [[[first-polar  first-ep] & tail]]
+(defn- group-endpoints-by-angle [[[first-polar  first-ep] & tail]]
   "
   [[angle [ep ...] [angle [ep ...]]]
   "
@@ -362,84 +272,37 @@
    )
   )
 
-(defn drawData
-  [[drawdata eps allsegs] context ox oy]
-  (let [o                      (g2d/vec2d ox oy)
-        sorted-ep              (sort-endpoints-by-angle eps o)
-        eps-by-angle           (group-endpoints-by-angle sorted-ep)
-        collist                (compute-intersections sorted-ep allsegs o)
-        pts0                   (produce-light-hull collist)
-        pts                    (compute-light-hull eps-by-angle allsegs o)]
-
-    (let [poly-count (count pts)
-          pts-source (cycle pts)
-          grd (.createRadialGradient context ox oy 50 ox oy 500)]
-      (.addColorStop grd 0 "yellow")
-      (.addColorStop grd 1 "white")
-      (loop [cnt poly-count
-             pts pts-source]
-        (if (= 0 cnt)
-          nil
-          (let [[[a] & tail] pts
-                [[b]] tail]
-            (.moveTo context ox oy)
-            (.lineTo context (:x a) (:y a))
-            (.lineTo context (:x b) (:y b))
-            (set! (. context -fillStyle) grd)
-;;            (set! (. context -fillStyle) "yellow")
-;;            (set! (. context -strokeStyle) "yellow")
-            (.fill context)
-            (recur (- cnt 1) tail)
-            ))
-        ))
-    
-    ;; Draw geometry
-    ;; 
-    (doseq [d drawdata]
-      (let [{point :point :as ep} (first d)]
-        (set! (. context -strokeStyle) "red")
-        (.beginPath context)
-        (.moveTo context (:x point) (:y point))
-        (doseq [{point :point} (rest d)]
-          (.lineTo context (:x point) (:y point)))
-        (if (> (count (:segments ep)) 1)
-          (.lineTo context (:x point) (:y point)))
-        (.stroke context)
-        ))
-
-    ;; Draw collisions
-    ;; 
-    ;; (doseq [[f color] pts]
-    ;;   (draw-point context f color)
-    ;;   )
-
-    ;; Draw endpoints
-    ;;
-    ;; (doseq [{{x :x y :y} :point} eps]
-    ;;   (.beginPath context)
-    ;;   (.arc context x y 5 0 (* 2.0 Math/PI) false)
-    ;;   (set! (. context -fillStyle) "red")
-    ;;   (.fill context)
-    ;;   )
-    
-    ;; Draw origin
-    ;;
-    (.beginPath context)
-    (set! (. context -fillStyle) "red")
-    (.arc context (:x o) (:y o) 5 0 (* 2.0 Math/PI) false)
-    (.fill context)
-   )
+(defn compute-visibility-hull
+  [eps segments o]
+  (let [sorted-ep    (sort-endpoints-by-angle eps o)
+        eps-by-angle (group-endpoints-by-angle sorted-ep)]
+    (reduce (fn [acc [angle [ep :as eps]]]
+              (into acc
+                    (cond
+                     (= 1 (count eps)) (process-one-endpoint ep segments o)
+                     :else             (process-many-endpoint eps segments o))))
+            []
+            eps-by-angle))
   )
 
 (defn ^:export init []
-  (let [target  (.getElementById js/document "target")
-        context (.getContext target "2d")
-        width   (.-width target)
-        height  (.-height target)
-        data    (build-geom-data geom)]
+  (let [target                 (.getElementById js/document "target")
+        context                (.getContext target "2d")
+        width                  (.-width target)
+        height                 (.-height target)
+        [drawdata eps allsegs :as data] (build-geom-data geom)]
     (dommy/listen! (sel1 :canvas) :mousemove
                    (fn [ev]
-                     (set! (. context -fillStyle) "white")
-                     (.fillRect context 0 0 width height)
-                     (drawData data context (.-x ev) (.-y ev))))))
+                     (let [x    (.-x ev)
+                           y    (.-y ev)
+                           o    (g2d/vec2d x y)
+                           hull (compute-visibility-hull eps allsegs o)]
+                       (draw/draw-rect context 0 0 width height "white")
+                       (draw/draw-hull context x y hull)
+                       (draw/draw-geometry context drawdata)
+                       (draw/draw-collisions context hull)
+                       (draw/draw-endpoints context eps)
+                       (draw/draw-point context o "lightblue")
+                       )))
+    ))
 
