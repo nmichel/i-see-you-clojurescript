@@ -6,7 +6,10 @@
 
 (enable-console-print!)
 
-(def geom (data/produce-stress-test-data-set-2))
+;(def geom (data/produce-parallel-vertical-segments-soup))
+;(def geom (data/produce-parallel-horizontal-segments-soup))
+;(def geom (data/produce-square-soup))
+(def geom (data/produce-block-soup))
 
 (defn- coord-list-to-point-list [data]
   (map (fn [[x y]] (g2d/vec2d x y)) (partition 2 data)))
@@ -360,9 +363,8 @@
   )
 
 (defn drawData
-  [context ox oy]
-  (let [[drawdata eps allsegs] (build-geom-data geom)
-        o                      (g2d/vec2d ox oy)
+  [[drawdata eps allsegs] context ox oy]
+  (let [o                      (g2d/vec2d ox oy)
         sorted-ep              (sort-endpoints-by-angle eps o)
         eps-by-angle           (group-endpoints-by-angle sorted-ep)
         collist                (compute-intersections sorted-ep allsegs o)
@@ -407,18 +409,18 @@
 
     ;; Draw collisions
     ;; 
-    (doseq [[f color] pts]
-      (draw-point context f color)
-      )
+    ;; (doseq [[f color] pts]
+    ;;   (draw-point context f color)
+    ;;   )
 
     ;; Draw endpoints
     ;;
-    (doseq [{{x :x y :y} :point} eps]
-      (.beginPath context)
-      (.arc context x y 5 0 (* 2.0 Math/PI) false)
-      (set! (. context -fillStyle) "red")
-      (.fill context)
-      )
+    ;; (doseq [{{x :x y :y} :point} eps]
+    ;;   (.beginPath context)
+    ;;   (.arc context x y 5 0 (* 2.0 Math/PI) false)
+    ;;   (set! (. context -fillStyle) "red")
+    ;;   (.fill context)
+    ;;   )
     
     ;; Draw origin
     ;;
@@ -430,13 +432,14 @@
   )
 
 (defn ^:export init []
-  (let [target (.getElementById js/document "target")
+  (let [target  (.getElementById js/document "target")
         context (.getContext target "2d")
-        width (.-width target)
-        height (.-height target)]
+        width   (.-width target)
+        height  (.-height target)
+        data    (build-geom-data geom)]
     (dommy/listen! (sel1 :canvas) :mousemove
                    (fn [ev]
                      (set! (. context -fillStyle) "white")
                      (.fillRect context 0 0 width height)
-                     (drawData context (.-x ev) (.-y ev))))))
+                     (drawData data context (.-x ev) (.-y ev))))))
 
