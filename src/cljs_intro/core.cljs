@@ -1,10 +1,10 @@
 (ns cljs-intro.core
   (:require [cljs-intro.g2d :as g2d]))
 
-(defn- coord-list-to-point-list [data]
+(defn coord-list-to-point-list [data]
   (map (fn [[x y]] (g2d/vec2d x y)) (partition 2 data)))
 
-(defn- build-segment-lists [points closed]
+(defn build-segment-lists [points closed]
   (let [pcnt (count points)
         scnt (if closed pcnt (- pcnt 1))
         pset (if closed (cycle points) points)
@@ -25,7 +25,7 @@
                     [(second rev) (first rev)])
                   [(last segments)])))
 
-(defn- build-endpoint-list [points segments closed]
+(defn build-endpoint-list [points segments closed]
   (let [cnt (count points)
         bep (build-begin-endpoint points segments closed)
         eep (build-end-endpoint points segments closed)]
@@ -39,7 +39,7 @@
         (into [bep] (conj (persistent! acc) eep))))
     ))
 
-(defn- build-one-geom-data [{:keys [data closed]}]
+(defn build-one-geom-data [{:keys [data closed]}]
   (let [points (vec (coord-list-to-point-list data))
         segments (vec (build-segment-lists points closed))
         eps (build-endpoint-list points segments closed)]

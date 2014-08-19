@@ -7,11 +7,17 @@
                 data))
   )
 
+(defn produce-empty-frame
+  []
+  (add-frame
+   []))
+
 (defn produce-dev-data
   []
   (add-frame
    [{:data [100.0,50.0,540.0,50.0,540.0,160.0,100.0,160.0] :closed false}
-    {:data [200.0,190.0,300,350] :closed false}])
+    {:data [200.0,190.0,300,350] :closed false}
+    ])
   )
 
 (defn produce-parallel-diagonal-segments-soup

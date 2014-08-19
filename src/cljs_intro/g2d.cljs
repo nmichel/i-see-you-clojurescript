@@ -37,6 +37,13 @@
   (polar (magnitude p)
          (Math/atan2 x y)))
 
+(defn rotate ;; TODO : pourri
+  [[x y] a]
+  (let [c (Math/cos a)
+        s (Math/sin a)]
+    [(- (* x c)(* y s))
+     (+ (* y c)(* x s))]))
+
 ;; -----
 
 (defn polar
@@ -102,3 +109,6 @@
   (let [op (minus b a)
         om (minus m a)]
     (/ (magnitude om) (magnitude op))))
+
+;; ----- 
+
