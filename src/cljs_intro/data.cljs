@@ -65,18 +65,22 @@
   )
 
 (defn produce-square-soup
-  []
-  (add-frame
-   (for [sx (range 6)
-         sy (range 3)]
-     (let [x (+ (* sx 100) 40)
-           y (+ (* sy 100) 50)
-           c 50]
-       {:data [x y (+ x c) y (+ x c) (+ y c) x (+ y c)] :closed (even? (+ sx sy))}
+  ([]
+     (produce-square-soup 6 3 50 40 50))
+  
+  ([rx ry hc ox oy]
+     (let [c (* hc 2)]
+       (add-frame
+        (for [sx (range rx)
+              sy (range ry)]
+          (let [x (+ (* sx c) ox)
+                y (+ (* sy c) oy)]
+            {:data [x y (+ x hc) y (+ x hc) (+ y hc) x (+ y hc)] :closed (even? (+ sx sy))}
+            )
+          )
+        )
        )
-     )
-   )
-  )
+     ))
 
 (defn- produce-space-partition-soup
   ([x y w h]
