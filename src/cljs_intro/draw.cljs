@@ -14,33 +14,40 @@
   )
 
 (defn draw-hull
-  [context ox oy pts]
+  [context ox oy pts img]
   (let [poly-count (count pts)
         pts-source (cycle pts)
+        [p c] (first pts-source)
         grd (.createRadialGradient context ox oy 50 ox oy 500)]
+    (.save context)
     (.addColorStop grd 0 "yellow")
     (.addColorStop grd 1 "white")
+    (.beginPath context)
+    (.moveTo context (:x p) (:y p))
+    ;; (set! (. context -strokeStyle) "yellow")
+    ;; (set! (. context -fillStyle) "yellow")
+    (set! (. context -fillStyle) grd)
     (loop [cnt poly-count
-           pts pts-source]
+           pts (rest pts-source)]
       (if (= 0 cnt)
-        nil
-        (let [[[a] & tail] pts
-              [[b]] tail]
-          (.moveTo context ox oy)
+        ;;(.stroke context)
+        ;;(.fill context)
+        (.clip context)
+        (let [[[a] & tail] pts]
           (.lineTo context (:x a) (:y a))
-          (.lineTo context (:x b) (:y b))
-          (set! (. context -fillStyle) grd)
-          ;;            (set! (. context -fillStyle) "yellow")
-          ;;            (set! (. context -strokeStyle) "yellow")
-          (.fill context)
           (recur (- cnt 1) tail)
-          )))))
+          ))))
+  ;(draw-rect context 0 0 800 600 "green")
+  (.drawImage context img 0 0 800 600)
+  (.restore context)
+  )
 
 (defn draw-geometry
   [context data]
   (doseq [d data]
     (let [{point :point :as ep} (first d)]
       (set! (. context -strokeStyle) "red")
+      (set! (.-lineWidth context) 2)
       (.beginPath context)
       (.moveTo context (:x point) (:y point))
       (doseq [{point :point} (rest d)]
