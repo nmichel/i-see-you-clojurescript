@@ -70,7 +70,7 @@
 ;;        r-geom []
         ]
     
-    (set! (.-src img) "http://www.topuniversities.com/sites/qs.topuni/files/filefields/field_article_image/Top_10_Universities_in_New_York_City.jpg")
+    (set! (.-src img) "http://upload.wikimedia.org/wikipedia/commons/e/ea/Selwyn_College_Old_Court%2C_Cambridge%2C_UK_-_Diliff.jpg")
 
     {:target  target
      :context context
