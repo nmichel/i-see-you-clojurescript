@@ -101,6 +101,36 @@
     )
   )
 
+(defn- build-data
+  [{:keys [drawdata eps allsegs]}
+   dynamic
+   alpha]
+  (->> dynamic
+       (map (partial build-time-dep-data alpha))
+       (reduce (fn [[adraw aeps asegs] [e s]]
+                 [(conj adraw e) (into aeps e) (into asegs s)])
+               [drawdata eps allsegs])))
+
+(defn- update-mouse-pos
+  [ev state]
+  (assoc state :x (.-x ev) :y (.-y ev)))
+
+(defn- update-game-state
+  [ev {:keys [static x y r-geom] :as state}]
+  (let [o (g2d/vec2d x y)
+        alpha (:alpha state)
+        [dd de ds] (build-data static r-geom alpha)
+        hull (core/compute-visibility-hull de ds o)
+        new-state (assoc state
+                    :hull hull
+                    :dynamic (assoc {}
+                               :drawdata dd
+                               :eps de
+                               :allsegs ds)
+                    :alpha (+ alpha (/ Math/PI 20)))]
+    (render-game new-state)
+    new-state))
+
 (defn ^:export init
   []
   (let [target                 (.getElementById js/document "target")
@@ -109,28 +139,8 @@
         height                 (.-height target)
         [drawdata eps allsegs :as data] (core/build-geom-data geom)]
     (let [chan-out (chan)]
-      (listen-dom-evt chan-out target :mousemove (fn [ev state]
-                                                   (assoc state :x (.-x ev) :y (.-y ev))))
-
-      (listen-timer chan-out 50 (partial (fn [ev {:keys [static x y r-geom] :as state}]
-                                           (let [{:keys [drawdata eps allsegs]} static
-                                                 o (g2d/vec2d x y)
-                                                 alpha (:alpha state)
-                                                 [dd de ds] (->> r-geom
-                                                                 (map (partial build-time-dep-data alpha))
-                                                                 (reduce (fn [[adraw aeps asegs] [e s]]
-                                                                           [(conj adraw e) (into aeps e) (into asegs s)])
-                                                                         [drawdata eps allsegs]))
-                                                 hull (core/compute-visibility-hull de ds o)
-                                                 new-state (assoc state
-                                                             :hull hull
-                                                             :dynamic (assoc {}
-                                                                        :drawdata dd
-                                                                        :eps de
-                                                                        :allsegs ds)
-                                                             :alpha (+ alpha (/ Math/PI 20)))]
-                                             (render-game new-state)
-                                             new-state))))
+      (listen-dom-evt chan-out target :mousemove update-mouse-pos)
+      (listen-timer chan-out 50 update-game-state)
       
       ;; Game loop
       ;; 
