@@ -5,7 +5,7 @@
             [cljs-intro.data :as data]
             [dommy.core :as dommy]
             [cljs.core.async :refer [<! >! chan close! sliding-buffer put! alts! timeout]])
-  (:require-macros [dommy.macros :refer [sel sel1]]
+  (:require-macros [dommy.core :refer [sel sel1]]
                    [cljs.core.async.macros :refer [go alt!]])
   )
 
