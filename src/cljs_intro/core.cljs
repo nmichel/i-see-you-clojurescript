@@ -47,10 +47,11 @@
     ))
 
 (defn build-geom-data [data]
-  "Return a list l as
+  "Return a list l such as:
    l[0] : list of list of endpoints (for drawing purpose)
    l[1] : list of all endpoints
-   l[2] : list of all segments"
+   l[2] : list of all segments
+  "
   (reduce (fn [[adraw aeps asegs] g]
             (let [[eps segs] (build-one-geom-data g)]
               [(conj adraw eps) (into aeps eps) (into asegs segs)]))
@@ -60,15 +61,14 @@
   (cond
    (identical? a p) b
    (identical? b p) a
-   )
-  )
+   ))
 
 (defn- sort-endpoints-by-angle
   [eps o]
   (->>
    (reduce (fn [acc {p :point :as ep}]
              (let [polar (g2d/->polar (g2d/minus p o))]
-               (conj! acc [polar ep]))) ;; -> [ [polar ep] [polar ep] ...]
+               (conj! acc [polar ep]))) ;; -> [[polar ep] [polar ep] ...]
            (transient []) eps)
    (persistent!)
    (sort (comp (fn [[{ra :r ta :theta} epa] [{rb :r tb :theta}  epb]]
@@ -76,8 +76,25 @@
                   (== ta tb) (<= ra rb)
                   (<= ta tb) true
                   :else false)
-                 ))))
-  )
+                 )))))
+
+(defn- group-endpoints-by-angle [[[first-polar first-ep] & tail]]
+  "
+  [[angle [ep ...]] [angle [ep ...]]]
+  "
+  (->>
+   (reduce (fn [[out [current-angle eps-vec :as acc]] [next-polar next-ep]]
+             (cond
+              (= current-angle (:theta next-polar)) [out [current-angle (conj eps-vec next-ep)]]     ;; same angle, add ep to acc
+              :else                                 [(conj out acc) [(:theta next-polar) [next-ep]]] ;; add acc to out, new acc from current ep
+              )
+             )
+           [[]                                 ;; res empty at start
+            [(:theta first-polar) [first-ep]]] ;; init acc with first endpoint
+           tail)
+   ((fn [[out acc]]
+      (conj out acc) ;; Merge last angle/endpoints into final result 
+      ))))
 
 (defn- compute-ray-segments-intersections
   [ray segments]
@@ -91,10 +108,12 @@
        (sort-by :f)))
 
 (defn- is-segment-bearing-endpoint
+  "Return true if one of segments bearing ep is identical to seg"
   [seg ep]
   (some #(identical? %1 seg) (:segments ep)))
 
 (defn- is-segment-bearing-some-endpoints
+  "Return true if seg is bearing at least one endpoint in eps"
   [eps seg]
   (some (partial is-segment-bearing-endpoint seg) eps))
 
@@ -131,6 +150,15 @@
   )
 
 (defn- classify-endpoint
+  "Classify a point depending on segments bearing it and the ray passing through it.
+
+  Returned classifier may be:
+
+     :collinear => all endpoints are on the ray
+     :cross     => one endpoint on each \"side\" of the ray
+     :out       => all endpoints \"before\" the ray
+     :in        => all endpoints \"after\" the ray
+  "
   [ray {:keys [segments] :as ep}]
   (if (= 1 (count segments))
     (classify-final-endpoint ray ep)
@@ -241,35 +269,25 @@
     )
   )
 
-(defn- group-endpoints-by-angle [[[first-polar  first-ep] & tail]]
-  "
-  [[angle [ep ...] [angle [ep ...]]]
-  "
-  (->>
-   (reduce (fn [[out [current-angle eps-vec :as acc]] [next-polar next-ep]]
-             (cond
-              (= current-angle (:theta next-polar)) [out [current-angle (conj eps-vec next-ep)]]     ;; same angle, add ep to acc
-              :else                                 [(conj out acc) [(:theta next-polar) [next-ep]]] ;; add acc to out, new acc from current ep
-              )
-             )
-           [[]                                 ;; res empty at start
-            [(:theta first-polar) [first-ep]]] ;; init acc with first endpoint
-           tail)
-   ((fn [[out acc]]
-      (conj out acc)
-      )) 
-   )
-  )
-
 (defn compute-visibility-hull
+  "Compute the geometry of the visibility hull from
+      . a set of endpoints
+      . a set of non intersecting segments, joining points from the above set
+      . the \"light\" position
+
+  Return a list of [p c] where
+      . p is g2d/vec2d
+      . c is metadata associated to p
+
+  Point are ordered with respect to their polar coordinate.
+  "
   [eps segments o]
-  (let [sorted-ep    (sort-endpoints-by-angle eps o)
-        eps-by-angle (group-endpoints-by-angle sorted-ep)]
-    (reduce (fn [acc [angle [ep :as eps]]]
-              (into acc
-                    (cond
-                     (= 1 (count eps)) (process-one-endpoint ep segments o)
-                     :else             (process-many-endpoint eps segments o))))
-            []
-            eps-by-angle))
+  (->> (sort-endpoints-by-angle eps o)
+       (group-endpoints-by-angle)
+       (reduce (fn [acc [angle [ep :as eps]]]
+                 (into acc
+                       (cond
+                        (= 1 (count eps)) (process-one-endpoint ep segments o)
+                        :else             (process-many-endpoint eps segments o))))
+               []))
   )

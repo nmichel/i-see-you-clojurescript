@@ -13,34 +13,43 @@
   (.fillRect context x y w h)
   )
 
-(defn draw-hull
+(defn draw-hull-by-clipping
   [context ox oy pts img]
   (let [poly-count (count pts)
         pts-source (cycle pts)
-        [p c] (first pts-source)
-        grd (.createRadialGradient context ox oy 50 ox oy 500)]
+        [p c] (first pts-source)]
     (.save context)
-    (.addColorStop grd 0 "yellow")
-    (.addColorStop grd 1 "white")
     (.beginPath context)
     (.moveTo context (:x p) (:y p))
-    ;; (set! (. context -strokeStyle) "yellow")
-    ;; (set! (. context -fillStyle) "yellow")
-    (set! (. context -fillStyle) grd)
     (loop [cnt poly-count
            pts (rest pts-source)]
       (if (= 0 cnt)
-        ;;(.stroke context)
-        ;;(.fill context)
         (.clip context)
         (let [[[a] & tail] pts]
           (.lineTo context (:x a) (:y a))
           (recur (- cnt 1) tail)
           ))))
-  ;(draw-rect context 0 0 800 600 "green")
-  (.drawImage context img 0 0 800 600)
+  (draw-rect context 0 0 800 600 "green") ;;(.drawImage context img 0 0 800 600)
   (.restore context)
   )
+
+(defn draw-hull-as-polygon
+  [context ox oy pts img]
+  (let [poly-count (count pts)
+        pts-source (cycle pts)
+        [p c] (first pts-source)]
+    (set! (. context -fillStyle) "yellow") ;; (set! (. context -strokeStyle) "yellow")
+    (set! (.-lineWidth context) 2)
+    (.beginPath context)
+    (.moveTo context (:x p) (:y p))
+    (loop [cnt poly-count
+           pts (rest pts-source)]
+      (if (= 0 cnt)
+        (.fill context) ;; (.stroke context)
+        (let [[[a] & tail] pts]
+          (.lineTo context (:x a) (:y a))
+          (recur (- cnt 1) tail)
+          )))))
 
 (defn draw-geometry
   [context data]
@@ -58,7 +67,7 @@
       ))
   )
 
-(defn draw-collisions
+(defn draw-hull-vertices
   [context pts]
   (doseq [[f color] pts]
     (draw-point context f color)

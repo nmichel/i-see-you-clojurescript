@@ -12,11 +12,19 @@
   (add-frame
    []))
 
-(defn produce-dev-data
+(defn produce-dev-data-1
   []
   (add-frame
    [{:data [100.0,50.0,540.0,50.0,540.0,160.0,100.0,160.0] :closed false}
     {:data [200.0,190.0,300,350] :closed false}
+    ])
+  )
+
+(defn produce-dev-data-2
+  []
+  (add-frame
+   [{:data [100.0,80.0,150.0,50.0,150.0,160.0] :closed false}
+    {:data [150.0,190.0,150.0,250.0,200.0,220.0] :closed false}
     ])
   )
 

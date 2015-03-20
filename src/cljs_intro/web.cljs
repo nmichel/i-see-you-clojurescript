@@ -6,20 +6,29 @@
             [dommy.core :as dommy]
             [cljs.core.async :refer [<! >! chan close! sliding-buffer put! alts! timeout]])
   (:require-macros [dommy.core :refer [sel sel1]]
-                   [cljs.core.async.macros :refer [go alt!]])
-  )
-
+                   [cljs.core.async.macros :refer [go alt!]]))
 
 (enable-console-print!)
 
 (def geom (data/produce-empty-frame))
-;(def geom (data/produce-dev-data))
-;(def geom (data/produce-parallel-vertical-segments-soup))
-;(def geom (data/produce-parallel-horizontal-segments-soup))
-;(def geom (data/produce-square-soup 12 6 25 20 25))
-;(def geom (data/produce-block-soup))
+;;(def geom (data/produce-dev-data-2))
+;;(def geom (data/produce-parallel-vertical-segments-soup))
+;;(def geom (data/produce-parallel-horizontal-segments-soup))
+;;(def geom (data/produce-square-soup 12 6 25 20 25))
+;;(def geom (data/produce-block-soup))
 
-(defn build-time-dep-data
+(defn- build-dynamic-data
+  []
+  (let [data [-20 -20 20 -20 20 20 -20 20]]
+    (for [sx (range 6)
+          sy (range 3)]
+      (let [x  (+ (+ (* 100 sx) 50) 30)
+            y  (+ (+ (* 100 sy) 30) 40)
+            a  (* (Math/random) (* 2 Math/PI))]
+        {:x x :y y :data data :closed (even? (+ sx sy)) :alpha a}
+        ))))
+  
+(defn- update-dynamic-data
  [a {:keys [x y data closed alpha]}]
  
  (->>
@@ -31,44 +40,30 @@
   (into [])
   (assoc {:closed closed} :data)
   (core/build-one-geom-data)
-  )
- )
+  ))
 
-(defn listen-timer
+(defn- listen-timer
   [chan-out period cb]
   
   (go (loop [timer (timeout period)]
         (<! timer)
         (put! chan-out [:timer cb])
-        (recur (timeout period))))
-  )
+        (recur (timeout period)))))
 
-(defn listen-dom-evt
+(defn- listen-dom-evt
   [chan-out target evt-type cb]
   (dommy/listen! target evt-type
                  (fn [ev]
-                   (put! chan-out [ev cb])
-                   ))
-  )
+                   (put! chan-out [ev cb]))))
 
-(defn init-game-state
+(defn- init-game-state
   []
   (let [target   (.getElementById js/document "target")
         context  (.getContext target "2d")
         img      (js/Image.)
         width    (.-width target)
         height   (.-height target)
-        data     [-20 -20 20 -20 20 20 -20 20]
-        r-geom   (for [sx (range 6)
-                       sy (range 3)]
-                   (let [x  (+ (+ (* 100 sx) 50) 30)
-                         y  (+ (+ (* 100 sy) 30) 40)
-                         a  (* (Math/random) (* 2 Math/PI))]
-                     {:x x :y y :data data :closed (even? (+ sx sy)) :alpha a}
-                     )
-                   )
-;;        r-geom []
-        ]
+        r-geom   (build-dynamic-data)]
     
     (set! (.-src img) "http://upload.wikimedia.org/wikipedia/commons/e/ea/Selwyn_College_Old_Court%2C_Cambridge%2C_UK_-_Diliff.jpg")
 
@@ -82,31 +77,31 @@
      :y       180
      :r-geom  r-geom
      :alpha   0
-     :static  (into {} (map vector [:drawdata :eps :allsegs] (core/build-geom-data geom)))
+     :static  (core/build-geom-data geom)
      :dynamic nil}
     )
   )
 
 (defn- render-game
   [{:keys [img width height hull x y context eps dynamic] :as state}]
-  (let [{:keys [drawdata eps]} dynamic
-        o                      (g2d/vec2d x y)
-        erase-color            "black"]
+  (let [[drawdata eps _allsegs] dynamic
+        o                       (g2d/vec2d x y)
+        erase-color             "black"]
     (draw/draw-rect context 0 0 width height erase-color)
-    (draw/draw-hull context x y hull img)
     (draw/draw-geometry context drawdata)
-    ;(draw/draw-collisions context hull)
-    ;(draw/draw-endpoints context eps)
+    (draw/draw-hull-as-polygon context x y hull img)
+    ;; (draw/draw-hull-by-clipping context x y hull img)
+    ;; (draw/draw-endpoints context eps)
+    ;; (draw/draw-hull-vertices context hull)
     (draw/draw-point context o "lightblue")
-    )
-  )
+    ))
 
 (defn- build-data
-  [{:keys [drawdata eps allsegs]}
+  [[drawdata eps allsegs]
    dynamic
    alpha]
   (->> dynamic
-       (map (partial build-time-dep-data alpha))
+       (map (partial update-dynamic-data alpha))
        (reduce (fn [[adraw aeps asegs] [e s]]
                  [(conj adraw e) (into aeps e) (into asegs s)])
                [drawdata eps allsegs])))
@@ -115,20 +110,17 @@
   [ev state]
   (assoc state :x (.-x ev) :y (.-y ev)))
 
-(defn- update-game-state
+(defn- update-visibility-hull
   [ev {:keys [static x y r-geom] :as state}]
   (let [o (g2d/vec2d x y)
         alpha (:alpha state)
+        ;;[dd de ds] static
         [dd de ds] (build-data static r-geom alpha)
         hull (core/compute-visibility-hull de ds o)
         new-state (assoc state
                     :hull hull
-                    :dynamic (assoc {}
-                               :drawdata dd
-                               :eps de
-                               :allsegs ds)
+                    :dynamic [dd de ds]
                     :alpha (+ alpha (/ Math/PI 20)))]
-    (render-game new-state)
     new-state))
 
 (defn ^:export init
@@ -140,33 +132,15 @@
         [drawdata eps allsegs :as data] (core/build-geom-data geom)]
     (let [chan-out (chan)]
       (listen-dom-evt chan-out target :mousemove update-mouse-pos)
-      (listen-timer chan-out 50 update-game-state)
+      (listen-timer chan-out 50 update-visibility-hull)
       
       ;; Game loop
       ;; 
       (go (loop [cont true
                  state (init-game-state)]
-            (let [[evt cb] (<! chan-out)]
-              (recur true (cb evt state))
+            (let [[evt cb] (<! chan-out)
+                  newstate (cb evt state)]
+              (render-game newstate)
+              (recur true newstate)
               )
-            )
-          )
-      )
-    )
-  )
-
-;; (defn ^:export init
-;;   []
-;;   (let [target   (.getElementById js/document "target")
-;;         context  (.getContext target "2d")
-;;         width    (.-width target)
-;;         height   (.-height target)]
-        
-;;     (.log js/console
-;;           (time
-;;            (let [geom (data/produce-square-soup)
-;;                  [drawdata eps allsegs :as data] (core/build-geom-data geom)
-;;                  o (g2d/vec2d 320 180)
-;;                  hull (core/compute-visibility-hull de ds o)]
-;;              )))))
-
+            )))))
