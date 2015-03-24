@@ -81,5 +81,15 @@
     (.arc context x y 5 0 (* 2.0 Math/PI) false)
     (set! (. context -fillStyle) "red")
     (.fill context)
-    )
-  )
+    ))
+
+(defn draw-segments
+  [context segments]
+  (set! (. context -strokeStyle) "red")
+  (set! (.-lineWidth context) 2)
+  (doseq [{{x1 :x y1 :y} :a {x2 :x y2 :y} :b} segments]
+    (.beginPath context)
+    (.moveTo context x1 y1)
+    (.lineTo context x2 y2)
+    (.stroke context)
+    ))

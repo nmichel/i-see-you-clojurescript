@@ -279,8 +279,8 @@
       . p is g2d/vec2d
       . c is metadata associated to p
 
-  Point are ordered with respect to their polar coordinate.
-  "
+  Point are ordered with respect to their polar coordinate."
+  
   [eps segments o]
   (->> (sort-endpoints-by-angle eps o)
        (group-endpoints-by-angle)
