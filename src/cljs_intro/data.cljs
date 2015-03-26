@@ -28,6 +28,20 @@
     ])
   )
 
+(defn produce-dev-data-3
+  []
+  (add-frame
+   [{:data [50.0,20.0,50.0,200.0] :closed false}
+    ])
+  )
+
+(defn produce-dev-data-4
+  []
+  (add-frame
+   [{:data [20,20, 220,20, 220,220, 20,220] :closed true}
+    ])
+  )
+
 (defn produce-parallel-diagonal-segments-soup
   []
   (add-frame
