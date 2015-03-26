@@ -151,7 +151,7 @@
         discriminant (- (* b b) (* 4 a c))]
              
     (cond
-     (< discriminant 0)
+     (<= discriminant 0)
        [false nil] ;; no collision possible
      :else
        (let [root (Math/sqrt discriminant)
