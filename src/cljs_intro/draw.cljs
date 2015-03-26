@@ -2,7 +2,7 @@
 
 (defn draw-point [context {x :x y :y} color]
   (.beginPath context)
-  (.arc context x y 3 0 (* 2.0 Math/PI) false)
+  (.arc context x y 5 0 (* 2.0 Math/PI) false)
   (set! (. context -fillStyle) color)
   (.fill context)
   )
@@ -85,7 +85,7 @@
 
 (defn draw-segments
   [context segments]
-  (set! (. context -strokeStyle) "red")
+  (set! (. context -strokeStyle) "cyan")
   (set! (.-lineWidth context) 2)
   (doseq [{{x1 :x y1 :y} :a {x2 :x y2 :y} :b} segments]
     (.beginPath context)
