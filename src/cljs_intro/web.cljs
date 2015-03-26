@@ -128,7 +128,7 @@
   [ev {:keys [static x y r-geom] :as state}]
   (let [o           (g2d/vec2d x y)
         alpha       (:alpha state)
-        dist        100
+        dist        80
         [dd de ds]  static ;; [dd de ds] (build-data static r-geom alpha)
         [segs hull] (spot/compute-visibility-hull ds o dist)
         ;; hull       (core/compute-visibility-hull de ds o dist)

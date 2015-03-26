@@ -97,14 +97,14 @@
   )
 
 (defn process-one-endpoint
-  [{:keys [point] :as ep} segments o]
+  [{:keys [point] :as ep} segments o dist]
   (let [ray          (g2d/ray o point)
         tested-segs  (core/compute-non-bearing-segments-list [ep] segments)
         [c :as cols] (core/compute-ray-segments-intersections ray tested-segs) ; c is nil when (empty? cols) is true
         classif      (core/classify-endpoint ray ep)]
     (if (and (not (nil? c)) (< (:f c) 1))
       [[(:p c) "black"]]
-      (let [col (if (empty? cols) (compute-far-point ray 100) c)] ;; TODO 100 is hardcoded !!!!
+      (let [col (if (empty? cols) (compute-far-point ray dist) c)] ;; TODO 100 is hardcoded !!!!
         (cond
          (= classif :cross) [[point "yellow"]]
          (= classif :in)    [[(:p col) "green"] [point "blue"]]
@@ -116,7 +116,7 @@
   )
 
 (defn process-many-endpoint
-  [[{:keys [point]} :as eps] segments o]
+  [[{:keys [point]} :as eps] segments o dist]
   (let [ray                    (g2d/ray o point) ;; use the first point as origin of the ray
         eps-with-classif       (map (fn[e] [(core/classify-endpoint ray e) e]) eps) ;; ( [classif ep] [classif ep] ... )
         eps-wo-first-collinear (drop-while #(= :collinear (nth %1 0)) eps-with-classif)]
@@ -133,7 +133,7 @@
      ;;   to vector with 'into' before applying 'conj' ...
      ;; 
      :else (let [tested-segs     (core/compute-non-bearing-segments-list eps segments) ;; only segments not bearing any endpoint
-                 [col :as cols]  (conj (into [] (core/compute-ray-segments-intersections ray tested-segs)) (compute-far-point ray 100)) ;; c is nil when (empty? cols)
+                 [col :as cols]  (conj (into [] (core/compute-ray-segments-intersections ray tested-segs)) (compute-far-point ray dist)) ;; c is nil when (empty? cols)
                  [c1 ep1 :as e1] (first eps-wo-first-collinear)]
 
              (cond
@@ -224,7 +224,7 @@
      (reduce (fn [acc [angle [ep :as eps]]]
                (into acc
                      (cond
-                      (= 1 (count eps)) (process-one-endpoint ep segs o)
-                      :else             (process-many-endpoint eps segs o))))
+                      (= 1 (count eps)) (process-one-endpoint ep segs o dist)
+                      :else             (process-many-endpoint eps segs o dist))))
              [])
      (conj [segs]))))
