@@ -12,10 +12,12 @@
 (enable-console-print!)
 
 ;;(def geom (data/produce-empty-frame))
-;;(def geom (data/produce-dev-data-2))
+;;(def geom (data/produce-dev-data-4))
 ;;(def geom (data/produce-parallel-vertical-segments-soup))
 ;;(def geom (data/produce-parallel-horizontal-segments-soup))
 (def geom (data/produce-square-soup 12 6 25 20 25))
+;;(def geom (data/produce-square-soup 2 3 25 20 25))
+;;(def geom (data/produce-square-soup 1 1 100 20 20))
 ;;(def geom (data/produce-block-soup))
 
 (defn- build-dynamic-data
@@ -84,17 +86,17 @@
   )
 
 (defn- render-game
-  [{:keys [img width height hull x y context eps dynamic] :as state}]
+  [{:keys [img width height segs hull x y context eps dynamic] :as state}]
   (let [[drawdata eps _allsegs] dynamic
         o                       (g2d/vec2d x y)
-        erase-color             "black"]
+        erase-color             "grey"]
     (draw/draw-rect context 0 0 width height erase-color)
-    (draw/draw-segments context hull)
-    ;; (draw/draw-geometry context drawdata)
-    ;; (draw/draw-hull-as-polygon context x y hull img)
-    ;; (draw/draw-hull-by-clipping context x y hull img)
-    ;; (draw/draw-endpoints context eps)
-    ;; (draw/draw-hull-vertices context hull)
+    (draw/draw-geometry context drawdata)
+    (draw/draw-hull-as-polygon context x y hull img)
+    (draw/draw-segments context segs)
+    ;;(draw/draw-hull-by-clipping context x y hull img)
+    ;;(draw/draw-endpoints context eps)
+    ;;(draw/draw-hull-vertices context hull)
     (draw/draw-point context o "lightblue")
     ))
 
@@ -119,19 +121,22 @@
 (defn- update-click-pos
   [ev state]
   (->> (assoc state :x (.-x ev) :y (.-y ev))
+       ;;(update-visibility-hull ev)
        ))
 
 (defn- update-visibility-hull
   [ev {:keys [static x y r-geom] :as state}]
-  (let [o          (g2d/vec2d x y)
-        alpha      (:alpha state)
-        dist       100
-        [dd de ds] static ;; [dd de ds] (build-data static r-geom alpha)
-        hull       (spot/compute-visibility-hull de ds o dist)
-        new-state  (assoc state
-                     :hull hull
-                     :dynamic [dd de ds]
-                     :alpha (+ alpha (/ Math/PI 20)))]
+  (let [o           (g2d/vec2d x y)
+        alpha       (:alpha state)
+        dist        100
+        [dd de ds]  static ;; [dd de ds] (build-data static r-geom alpha)
+        [segs hull] (spot/compute-visibility-hull ds o dist)
+        ;; hull       (core/compute-visibility-hull de ds o dist)
+        new-state   (assoc state
+                      :segs segs
+                      :hull hull
+                      :dynamic [dd de ds]
+                      :alpha (+ alpha (/ Math/PI 20)))]
     new-state))
 
 (defn ^:export init
@@ -143,7 +148,7 @@
         [drawdata eps allsegs :as data] (core/build-geom-data geom)]
     (let [chan-out (chan)]
       (listen-dom-evt chan-out target :mousemove update-mouse-pos)
-      (listen-dom-evt chan-out target :click update-click-pos)
+      ;;(listen-dom-evt chan-out target :click update-click-pos)
       ;;(listen-timer chan-out 50 update-visibility-hull)
       
       ;; Game loop

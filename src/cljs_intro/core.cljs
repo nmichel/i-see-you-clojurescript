@@ -57,13 +57,13 @@
               [(conj adraw eps) (into aeps eps) (into asegs segs)]))
           [[] [] []] data))
 
-(defn- find-other-end [{:keys [a b]} p]
+(defn find-other-end [{:keys [a b]} p]
   (cond
-   (identical? a p) b
-   (identical? b p) a
+   (= a p) b
+   (= b p) a
    ))
 
-(defn- sort-endpoints-by-angle
+(defn sort-endpoints-by-angle
   [eps o]
   (->>
    (reduce (fn [acc {p :point :as ep}]
@@ -78,7 +78,7 @@
                   :else false)
                  )))))
 
-(defn- group-endpoints-by-angle [[[first-polar first-ep] & tail]]
+(defn group-endpoints-by-angle [[[first-polar first-ep] & tail]]
   "
   [[angle [ep ...]] [angle [ep ...]]]
   "
@@ -96,7 +96,7 @@
       (conj out acc) ;; Merge last angle/endpoints into final result 
       ))))
 
-(defn- compute-ray-segments-intersections
+(defn compute-ray-segments-intersections
   [ray segments]
   (->> segments
        (reduce (fn [acc s]
@@ -108,9 +108,9 @@
        (sort-by :f)))
 
 (defn- is-segment-bearing-endpoint
-  "Return true if one of segments bearing ep is identical to seg"
-  [seg ep]
-  (some #(identical? %1 seg) (:segments ep)))
+  "Return true if endpoint is at same position than one segment ends"
+  [{a :a b :b} {p :point}]
+  (or (= a p) (= b p)))
 
 (defn- is-segment-bearing-some-endpoints
   "Return true if seg is bearing at least one endpoint in eps"
@@ -149,7 +149,7 @@
      ))
   )
 
-(defn- classify-endpoint
+(defn classify-endpoint
   "Classify a point depending on segments bearing it and the ray passing through it.
 
   Returned classifier may be:
