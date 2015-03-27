@@ -35,7 +35,7 @@
 (defn ->polar
   [{x :x y :y :as p}]
   (polar (magnitude p)
-         (Math/atan2 x y)))
+         (Math/atan2 y x)))
 
 (defn rotate ;; TODO : pourri
   [[x y] a]

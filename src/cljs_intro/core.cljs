@@ -129,8 +129,8 @@
 
     (cond
      (= 0 d) :collinear
-     (> 0 d) :out
-     (< 0 d) :in
+     (> 0 d) :in
+     (< 0 d) :out
      ))
   )
 
@@ -144,8 +144,8 @@
     (cond
      (and (= 0 d1)(= 0 d2)) :collinear
      (< (* d1 d2) 0)        :cross
-     (or (> 0 d1)(> 0 d2))  :out
-     (or (< 0 d1)(< 0 d2))  :in
+     (or (> 0 d1)(> 0 d2))  :in
+     (or (< 0 d1)(< 0 d2))  :out
      ))
   )
 
