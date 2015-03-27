@@ -1,4 +1,5 @@
-(ns cljs-intro.draw)
+(ns cljs-intro.draw
+  (:require [cljs-intro.g2d :as g2d]))
 
 (defn draw-point [context {x :x y :y} color]
   (.beginPath context)
@@ -50,6 +51,72 @@
           (.lineTo context (:x a) (:y a))
           (recur (- cnt 1) tail)
           )))))
+
+(defn draw-hull-as-fan
+  [context ox oy pts img]
+  (let [poly-count (count pts)
+        pts-source (partition 2 1 (cycle pts))]
+    (set! (. context -fillStyle) "yellow")
+    (set! (. context -strokeStyle) "orange")
+    (set! (.-lineWidth context) 2)
+    (loop [cnt poly-count
+           pts pts-source]
+      (if (< 0 cnt)
+        (let [pair (first pts)
+              [a ca] (first pair)
+              [b cb] (second pair)]
+          (.beginPath context)
+          (.moveTo context (:x a) (:y a))
+          (.lineTo context ox oy)
+          (.lineTo context (:x b) (:y b))
+          (.lineTo context (:x a) (:y a))
+          (.fill context)
+          (.stroke context)
+          (recur (dec cnt) (rest pts))
+          )
+        ))))
+
+(defn draw-hull-as-arc
+  [context ox oy pts img]
+  (let [o (g2d/vec2d ox oy)
+        poly-count (count pts)
+        pts-source (partition 2 1 (cycle pts))]
+    (set! (. context -fillStyle) "yellow")
+    (set! (. context -strokeStyle) "orange")
+    (set! (.-lineWidth context) 2)
+    (loop [cnt poly-count
+           pts pts-source]
+      (if (< 0 cnt)
+        (let [pair (first pts)
+              [a ca] (first pair)
+              [b cb] (second pair)
+              ao (g2d/minus a o)
+              bo (g2d/minus b o)
+              dao (g2d/magnitude ao)
+              dbo (g2d/magnitude bo)]
+          (if (and  (> 0.00001 (Math/abs (- 80 dao))) (> 0.00001 (Math/abs (- 80 dbo))))
+            (let [{ta :theta} (g2d/->polar ao)
+                  {tb :theta} (g2d/->polar bo)
+                  cclw (< tb ta)]
+              (.beginPath context)
+              (.moveTo context ox oy)
+              (.lineTo context (:x a) (:y a))
+              (.arc context ox oy 80 ta tb false)
+              (.fill context)
+              (.stroke context)
+              )
+            (do
+              (.beginPath context)
+              (.moveTo context (:x a) (:y a))
+              (.lineTo context ox oy)
+              (.lineTo context (:x b) (:y b))
+              (.lineTo context (:x a) (:y a))
+              (.fill context)
+              (.stroke context)
+              )
+          )
+          (recur (dec cnt) (rest pts))
+        )))))
 
 (defn draw-geometry
   [context data]
