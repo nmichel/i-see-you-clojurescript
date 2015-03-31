@@ -1,15 +1,6 @@
 (ns cljs-intro.spot
   (:require [cljs-intro.core :as core]
-            [cljs-intro.g2d :as g2d]
-            [clojure.string :as string]))
-
-(defn- dump-vec
-  [{x :x y :y}]
-  (string/join ["[x: " (.toString x) ", y: " (.toString y) "]"]))
-  
-(defn- dump-segment
-  [{a :a b :b}]
-  (string/join ["< " (dump-vec a) (dump-vec b) " >"]))
+            [cljs-intro.g2d :as g2d]))
 
 (defn- select-segments
   "Select segments for which absolute distance to m is lower than or equal to d"

@@ -1,5 +1,14 @@
 (ns cljs-intro.core
-  (:require [cljs-intro.g2d :as g2d]))
+  (:require [cljs-intro.g2d :as g2d]
+            [clojure.string :as string]))
+
+(defn dump-vec
+  [{x :x y :y}]
+  (string/join ["[x: " (.toString x) ", y: " (.toString y) "]"]))
+  
+(defn dump-segment
+  [{a :a b :b}]
+  (string/join ["< " (dump-vec a) (dump-vec b) " >"]))
 
 (defn coord-list-to-point-list [data]
   (map (fn [[x y]] (g2d/vec2d x y)) (partition 2 data)))
