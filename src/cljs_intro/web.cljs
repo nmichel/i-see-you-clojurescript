@@ -1,5 +1,6 @@
 (ns cljs-intro.web
   (:require [cljs-intro.core :as core]
+            [cljs-intro.global :as global]
             [cljs-intro.spot :as spot]
             [cljs-intro.g2d :as g2d]
             [cljs-intro.draw :as draw]
@@ -93,7 +94,7 @@
     (draw/draw-rect context 0 0 width height erase-color)
     ;;(draw/draw-geometry context drawdata)
     (draw/draw-hull-as-arc context x y hull img)
-    ;;(draw/draw-hull-as-polygon context x y hull img)
+    ;;(draw/draw-hull-as-fan context x y hull img)
     ;;(draw/draw-hull-by-clipping context x y hull img)
     (draw/draw-segments context segs)
     ;;(draw/draw-endpoints context eps)
@@ -132,7 +133,7 @@
         dist        80
         [dd de ds]  static ;; [dd de ds] (build-data static r-geom alpha)
         [segs hull] (spot/compute-visibility-hull ds o dist)
-        ;;hull       (core/compute-visibility-hull de ds o)
+        ;;hull       (global/compute-visibility-hull de ds o)
         new-state   (assoc state
                       :segs segs
                       :hull hull
