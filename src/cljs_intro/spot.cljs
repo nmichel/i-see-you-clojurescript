@@ -94,12 +94,12 @@
         [c :as cols] (core/compute-ray-segments-intersections ray tested-segs) ; c is nil when (empty? cols) is true
         classif      (core/classify-endpoint ray ep)]
     (if (and (not (nil? c)) (< (:f c) 1))
-      [[(:p c) "black"]]
+      [[(g2d/endpoint (:p c) []) "black"]]
       (let [col (if (empty? cols) (compute-far-point ray dist) c)] ;; TODO 100 is hardcoded !!!!
         (cond
-         (= classif :cross) [[point "yellow"]]
-         (= classif :in)    [[(:p col) "green"] [point "blue"]]
-         (= classif :out)   [[point "green"] [(:p col) "blue"]]
+         (= classif :cross) [[ep "yellow"]]
+         (= classif :in)    [[(g2d/endpoint (:p col) []) "green"] [ep "blue"]]
+         (= classif :out)   [[ep "green"] [(g2d/endpoint (:p col) []) "blue"]]
          )
         )
       )
@@ -130,11 +130,11 @@
              (cond
               ;; There is at least a collision, and the nearest if before the first ep
               ;; 
-              (and (not (nil? col)) (< (:f col) 1)) [[(:p col) "black"]]
+              (and (not (nil? col)) (< (:f col) 1)) [[(g2d/endpoint (:p col) []) "black"]]
 
               ;; The first ep is :cross
               ;;
-              (= :cross c1) [[(:point ep1) "white"]]
+              (= :cross c1) [[ep1 "white"]]
                                           
               ;; First ep is :out
               ;; Search for first :in or :cross (is any)
@@ -146,22 +146,22 @@
                              (nil? c2) (cond
                                         ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
                                         ;; 
-                                        (nil? col) [[(:point ep1) "white"]]
+                                        (nil? col) [[ep1 "white"]]
                                         ;; no closing, but a col
                                         ;; 
-                                        :else [[(:point ep1) "green"] [(:p col) "blue"]]
+                                        :else [[ep1 "green"] [(g2d/endpoint (:p col) []) "blue"]]
                                         )
 
                             ;; A closing ep and no col
                             ;; 
-                            (nil? col) [[(:point ep1) "green"] [(:point p2) "blue"]]
+                            (nil? col) [[ep1 "green"] [p2 "blue"]]
 
                              ;; A closing ep. Depending on the relative positions of the closing point and the
                              ;; closest collision, use one or the other as the second point
                              ;; 
                              :else (let [r2 (g2d/ratio ray (:point p2))
-                                         p (if (< (:f col) r2) (:p col) (:point p2))]
-                                     [[(:point ep1) "green"] [p "blue"]])
+                                         p (if (< (:f col) r2) (g2d/endpoint (:p col) []) p2)]
+                                     [[ep1 "green"] [p "blue"]])
                              )
                             )
 
@@ -175,22 +175,22 @@
                             (nil? c2) (cond
                                        ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
                                        ;; 
-                                       (nil? col) [[(:point ep1) "white"]]
+                                       (nil? col) [[ep1 "white"]]
                                        ;; no closing, but a col
                                        ;; 
-                                       :else [[(:p col) "green"] [(:point ep1) "blue"]]
+                                       :else [[(g2d/endpoint (:p col) []) "green"] [ep1 "blue"]]
                                        )
 
                             ;; A closing ep and no col
                             ;; 
-                            (nil? col) [[(:point p2) "green"] [(:point ep1) "blue"]]
+                            (nil? col) [[p2 "green"] [ep1 "blue"]]
 
                              ;; A closing ep. Depending on the relative positions of the closing point and the
                              ;; closest collision, use one or the other as the second point
                              ;; 
                              :else (let [r2 (g2d/ratio ray (:point p2))
-                                         p (if (< (:f col) r2) (:p col) (:point p2))]
-                                     [[p "green"] [(:point ep1) "blue"]])
+                                         p (if (< (:f col) r2) (g2d/endpoint (:p col) []) p2)]
+                                     [[p "green"] [ep1 "blue"]])
                              )
                            )
               )
