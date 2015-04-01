@@ -11,22 +11,14 @@
                 (>= d))
           segments))
 
-(defn prout
-  [{a :a b :b :as s} f]
-
-  (-> (g2d/minus b a)
-      (g2d/scale f)
-      (g2d/plus a)
-      ))
-
 (defn- trim-segment
   "Trim segment s with respect to circle c"
 
   [{a :a b :b :as s} c]
   (let [[col? cols] (g2d/intersection-segment-circle c s)]
     (if col?
-      (let [ta   (if (nil? (cols :t1)) a (prout s (cols :t1)))
-            tb   (if (nil? (cols :t2)) b (prout s (cols :t2)))]
+      (let [ta   (if (nil? (cols :t1)) a (g2d/stretch s (cols :t1)))
+            tb   (if (nil? (cols :t2)) b (g2d/stretch s (cols :t2)))]
         (assoc s :a ta :b tb))
       nil)))
 

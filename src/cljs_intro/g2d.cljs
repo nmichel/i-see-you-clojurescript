@@ -56,6 +56,14 @@
   [a b]
   {:a a :b b})
 
+(defn stretch
+  [{a :a b :b :as s} f]
+
+  (-> (minus b a)
+      (scale f)
+      (plus a)
+      ))
+
 ;; -----
 
 (defn endpoint
