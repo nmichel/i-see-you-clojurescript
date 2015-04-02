@@ -78,7 +78,7 @@
         ))))
 
 (defn draw-hull-as-arc
-  [context ox oy pts img]
+  [context ox oy pts dist img]
   (let [o (g2d/vec2d ox oy)
         poly-count (count pts)
         pts-source (partition 2 1 (cycle pts))]
@@ -95,8 +95,8 @@
               bo (g2d/minus b o)
               dao (g2d/magnitude ao)
               dbo (g2d/magnitude bo)]
-          (if (and  (> 0.00001 (Math/abs (- 80 dao)))
-                    (> 0.00001 (Math/abs (- 80 dbo)))
+          (if (and  (> 0.00001 (Math/abs (- dist dao)))
+                    (> 0.00001 (Math/abs (- dist dbo)))
                     (or (not (identical? sega segb)) (nil? sega)) 
                     )
             (let [{ta :theta} (g2d/->polar ao)
@@ -104,7 +104,7 @@
               (.beginPath context)
               (.moveTo context ox oy)
               (.lineTo context (:x a) (:y a))
-              (.arc context ox oy 80 ta tb false)
+              (.arc context ox oy dist ta tb false)
               (.fill context)
               ;;(.stroke context)
               )

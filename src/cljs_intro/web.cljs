@@ -13,10 +13,10 @@
 (enable-console-print!)
 
 ;;(def geom (data/produce-empty-frame))
-;;(def geom (data/produce-dev-data-4))
+(def geom (data/produce-dev-data-4))
 ;;(def geom (data/produce-parallel-vertical-segments-soup))
 ;;(def geom (data/produce-parallel-horizontal-segments-soup))
-(def geom (data/produce-square-soup 12 6 25 20 25))
+;;(def geom (data/produce-square-soup 12 6 25 20 25))
 ;;(def geom (data/produce-square-soup 2 3 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 100 20 20))
 ;;(def geom (data/produce-block-soup))
@@ -61,7 +61,7 @@
                    (put! chan-out [ev cb]))))
 
 (defn- init-game-state
-  []
+  [dist]
   (let [target   (.getElementById js/document "target")
         context  (.getContext target "2d")
         img      (js/Image.)
@@ -82,18 +82,19 @@
      :r-geom  r-geom
      :alpha   0
      :static  (core/build-geom-data geom)
-     :dynamic nil}
+     :dynamic nil
+     :dist    dist}
     )
   )
 
 (defn- render-game
-  [{:keys [img width height segs hull x y context eps dynamic] :as state}]
+  [{:keys [img width height segs hull x y context eps dynamic dist] :as state}]
   (let [[drawdata eps _allsegs] dynamic
         o                       (g2d/vec2d x y)
         erase-color             "grey"]
     (draw/draw-rect context 0 0 width height erase-color)
     ;;(draw/draw-geometry context drawdata)
-    (draw/draw-hull-as-arc context x y hull img)
+    (draw/draw-hull-as-arc context x y hull dist img)
     ;;(draw/draw-hull-as-fan context x y hull img)
     ;;(draw/draw-hull-by-clipping context x y hull img)
     (draw/draw-segments context segs)
@@ -127,10 +128,9 @@
        ))
 
 (defn- update-visibility-hull
-  [ev {:keys [static x y r-geom] :as state}]
+  [ev {:keys [static x y r-geom dist] :as state}]
   (let [o           (g2d/vec2d x y)
         alpha       (:alpha state)
-        dist        80
         [dd de ds]  static ;; [dd de ds] (build-data static r-geom alpha)
         [segs hull] (spot/compute-visibility-hull ds o dist)
         ;;hull       (global/compute-visibility-hull de ds o)
@@ -156,7 +156,7 @@
       ;; Game loop
       ;; 
       (go (loop [cont true
-                 state (init-game-state)]
+                 state (init-game-state 100)]
             (let [[evt cb] (<! chan-out)
                   newstate (cb evt state)]
               (render-game newstate)
