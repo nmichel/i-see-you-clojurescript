@@ -72,12 +72,21 @@
    (= b p) a
    ))
 
+(defn qualify-endpoint-angle
+  [ep angle]
+  (assoc ep :angle angle))
+
 (defn sort-endpoints-by-angle
+  "Sort endpoints by increasing polar angle. If some endpoints lie on the same angle, they are
+   sorted by increasing distance to origin.
+
+   Each endpoint is also tagged with the angle it lies with key :angle"
+  
   [eps o]
   (->>
    (reduce (fn [acc {p :point :as ep}]
-             (let [polar (g2d/->polar (g2d/minus p o))]
-               (conj! acc [polar ep]))) ;; -> [[polar ep] [polar ep] ...]
+             (let [{angle :theta :as polar} (g2d/->polar (g2d/minus p o))]
+               (conj! acc [polar (qualify-endpoint-angle ep angle)]))) ;; -> [[polar ep] [polar ep] ...]
            (transient []) eps)
    (persistent!)
    (sort (comp (fn [[{ra :r ta :theta} epa] [{rb :r tb :theta}  epb]]
