@@ -13,13 +13,13 @@
 (enable-console-print!)
 
 ;;(def geom (data/produce-empty-frame))
-(def geom (data/produce-dev-data-4))
+;;(def geom (data/produce-dev-data-4))
 ;;(def geom (data/produce-parallel-vertical-segments-soup))
 ;;(def geom (data/produce-parallel-horizontal-segments-soup))
 ;;(def geom (data/produce-square-soup 12 6 25 20 25))
-;;(def geom (data/produce-square-soup 2 3 25 20 25))
+;;(def geom (data/produce-square-soup 1 1 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 100 20 20))
-;;(def geom (data/produce-block-soup))
+(def geom (data/produce-block-soup))
 
 (defn- build-dynamic-data
   []
@@ -31,10 +31,10 @@
             a  (* (Math/random) (* 2 Math/PI))]
         {:x x :y y :data data :closed (even? (+ sx sy)) :alpha a}
         ))))
-  
+
 (defn- update-dynamic-data
  [a {:keys [x y data closed alpha]}]
- 
+
  (->>
   (partition 2 data)
   (map (fn [p]
@@ -48,7 +48,7 @@
 
 (defn- listen-timer
   [chan-out period cb]
-  
+
   (go (loop [timer (timeout period)]
         (<! timer)
         (put! chan-out [:timer cb])
@@ -68,7 +68,7 @@
         width    (.-width target)
         height   (.-height target)
         r-geom   (build-dynamic-data)]
-    
+
     (set! (.-src img) "http://upload.wikimedia.org/wikipedia/commons/e/ea/Selwyn_College_Old_Court%2C_Cambridge%2C_UK_-_Diliff.jpg")
 
     {:target  target
@@ -152,9 +152,9 @@
       (listen-dom-evt chan-out target :mousemove update-mouse-pos)
       ;;(listen-dom-evt chan-out target :click update-click-pos)
       ;;(listen-timer chan-out 50 update-visibility-hull)
-      
+
       ;; Game loop
-      ;; 
+      ;;
       (go (loop [cont true
                  state (init-game-state 100)]
             (let [[evt cb] (<! chan-out)
@@ -162,3 +162,4 @@
               (render-game newstate)
               (recur true newstate)
               ))))))
+
