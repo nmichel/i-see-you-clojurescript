@@ -69,7 +69,7 @@
         height   (.-height target)
         r-geom   (build-dynamic-data)]
 
-    (set! (.-src img) "http://upload.wikimedia.org/wikipedia/commons/e/ea/Selwyn_College_Old_Court%2C_Cambridge%2C_UK_-_Diliff.jpg")
+    ;;(set! (.-src img) "http://upload.wikimedia.org/wikipedia/commons/e/ea/Selwyn_College_Old_Court%2C_Cambridge%2C_UK_-_Diliff.jpg")
 
     {:target  target
      :context context
@@ -117,13 +117,13 @@
 
 (defn- update-mouse-pos
   [ev state]
-  (->> (assoc state :x (.-x ev) :y (.-y ev))
+  (->> (assoc state :x (.-clientX ev) :y (.-clientY ev))
        (update-visibility-hull ev)
        ))
 
 (defn- update-click-pos
   [ev state]
-  (->> (assoc state :x (.-x ev) :y (.-y ev))
+  (->> (assoc state :x (.-clientX ev) :y (.-clientY ev))
        ;;(update-visibility-hull ev)
        ))
 
