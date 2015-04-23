@@ -78,54 +78,33 @@
         ))))
 
 (defn draw-hull-as-arc
-  [context ox oy pts dist img]
-  (let [o (g2d/vec2d ox oy)
-        poly-count (count pts)
-        pts-source (partition 2 1 (cycle pts))]
-    (set! (. context -fillStyle) "yellow")
-    ;;(set! (. context -strokeStyle) "orange")
-    ;;(set! (.-lineWidth context) 2)
-    (loop [cnt poly-count
-           pts pts-source]
-      (if (< 0 cnt)
-        (let [pair (first pts)
-              [{a :point [sega] :segments angle_a :angle} ca] (first pair)
-              [{b :point [segb] :segments angle_b :angle} cb] (second pair)
-              ao (g2d/minus a o)
-              bo (g2d/minus b o)
-              dao (g2d/magnitude ao)
-              dbo (g2d/magnitude bo)]
-          (set! (. context -fillStyle) "yellow")
-          (if-not (= angle_a angle_b)
-            ;; Draw something only if 2 endpoints lie on different radiuses
-            ;;
-            (if (and  (> 0.00001 (Math/abs (- dist dao)))
-                      (> 0.00001 (Math/abs (- dist dbo)))
-                      (or (not (identical? sega segb)) (nil? sega)))
-              (let [{ta :theta} (g2d/->polar ao)
-                    {tb :theta} (g2d/->polar bo)]
-                (.beginPath context)
-                (.moveTo context ox oy)
-                (.lineTo context (:x a) (:y a))
-                (.arc context ox oy dist ta tb false)
-                (.fill context)
-                ;;(.stroke context)
-                )
-              (do
-                (.beginPath context)
-                (.moveTo context (:x a) (:y a))
-                (.lineTo context ox oy)
-                (.lineTo context (:x b) (:y b))
-                (.lineTo context (:x a) (:y a))
-                (.fill context)
-                ;;(.stroke context)
-                )
-              )
-            )
-            (recur (dec cnt) (rest pts))
-          )
-        ))
-    ))
+  [context ox oy surfaces dist img]
+  (set! (. context -fillStyle) "yellow")
+  (doseq
+    [[t
+      [{a :point angle_a :angle} ca]
+      [{b :point angle_b :angle} cb]] surfaces]
+
+    (if
+      (= :arc t)
+      (do
+        (.beginPath context)
+        (.moveTo context ox oy)
+        (.lineTo context (:x a) (:y a))
+        (.arc context ox oy dist angle_a angle_b false)
+        (.fill context)
+        )
+      (do
+        (.beginPath context)
+        (.moveTo context (:x a) (:y a))
+        (.lineTo context ox oy)
+        (.lineTo context (:x b) (:y b))
+        (.lineTo context (:x a) (:y a))
+        (.fill context)
+        )
+      )
+    )
+)
 
 (defn draw-geometry
   [context data]

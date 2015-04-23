@@ -145,11 +145,11 @@
                (cond
                 ;; the nearest collision if before the first ep
                 ;;
-                (< fcol 1) [[col "black"]]
+                (< fcol 1) [[(qualify-endpoint-role col :collision) "black"]]
 
                 ;; The first ep is :cross
                 ;;
-                (= :cross c1) [[ep1 "white"]]
+                (= :cross c1) [[(qualify-endpoint-role ep1 :cross) "white"]]
 
                 ;; First ep is :out
                 ;; Search for first :in or :cross (is any)
@@ -158,25 +158,18 @@
                               (cond
                                ;; No closing ep found
                                ;;
-                               (nil? c2) (cond
-                                          ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
-                                          ;;
-                                          (nil? col) [[ep1 "white"]]
-                                          ;; no closing, but a col
-                                          ;;
-                                          :else [[ep1 "green"] [col "blue"]]
-                                          )
+                               (nil? c2) [[(qualify-endpoint-role ep1 :out) "green"] [(qualify-endpoint-role col :in) "blue"]]
 
                                ;; A closing ep and no col
                                ;;
-                               (nil? col) [[ep1 "green"] [p2 "blue"]]
+                               (nil? col) [[(qualify-endpoint-role ep1 :out) "green"] [(qualify-endpoint-role p2 :in) "blue"]]
 
                                ;; A closing ep. Depending on the relative positions of the closing point and the
                                ;; closest collision, use one or the other as the second point
                                ;;
                                :else (let [r2 (g2d/ratio ray (:point p2))
                                            p (if (< fcol r2) col p2)]
-                                       [[ep1 "green"] [p "blue"]])
+                                       [[(qualify-endpoint-role ep1 :out) "green"] [(qualify-endpoint-role p :in) "blue"]])
                                )
                               )
 
@@ -187,31 +180,50 @@
                              (cond
                               ;; No closing ep found
                               ;;
-                              (nil? c2) (cond
-                                         ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
-                                         ;;
-                                         (nil? col) [[ep1 "white"]]
-                                         ;; no closing, but a col
-                                         ;;
-                                         :else [[col "green"] [ep1 "blue"]]
-                                         )
+                              (nil? c2) [[(qualify-endpoint-role col :in) "green"] [(qualify-endpoint-role ep1 :out) "blue"]]
 
                               ;; A closing ep and no col
                               ;;
-                              (nil? col) [[p2 "green"] [ep1 "blue"]]
+                              (nil? col) [[(qualify-endpoint-role p2 :in) "green"] [(qualify-endpoint-role ep1 :out) "blue"]]
 
                               ;; A closing ep. Depending on the relative positions of the closing point and the
                               ;; closest collision, use one or the other as the second point
                               ;;
                               :else (let [r2 (g2d/ratio ray (:point p2))
                                           p (if (< fcol r2) col p2)]
-                                      [[p "green"] [ep1 "blue"]])
+                                      [[(qualify-endpoint-role p :in) "green"] [(qualify-endpoint-role ep1 :out) "blue"]])
                               )
                              )
                 )
                )
              )
      )
+    )
+  )
+
+(defn- compute-hull-vertices
+  [segs o dist eps]
+  (reduce (fn [acc [angle [ep :as eps]]]
+            (into acc
+                  (cond
+                   (= 1 (count eps)) (process-one-endpoint ep segs o dist)
+                   :else             (process-many-endpoint eps segs o dist))))
+          []
+          eps))
+
+(defn- compute-hull-surfaces
+  [o eps]
+
+  (for [[[{a :point angle_a :angle geom_a :geom role_a :role} ca :as epa]
+         [{b :point angle_b :angle geom_b :geom role_b :role} cb :as epb]] (take (count eps) (partition 2 1 (cycle eps))) :when (not= angle_a angle_b)]
+    (if
+      (or (= :farpoint geom_a geom_b)
+          (and (= :farpoint geom_a) (= :inter geom_b))
+          (and (= :farpoint geom_b) (= :inter geom_a))
+          (and (= :inter geom_b geom_a) (= :out role_a) (= :in role_b)))
+      [:arc epa epb]
+      [:triangle epa epb]
+      )
     )
   )
 
@@ -228,11 +240,7 @@
      (core/sort-endpoints-by-angle eps o)
      (core/group-endpoints-by-angle)
      (merge-angle-sorted-endpoints)
-     (reduce (fn [acc [angle [ep :as eps]]]
-               (into acc
-                     (cond
-                      (= 1 (count eps)) (process-one-endpoint ep segs o dist)
-                      :else             (process-many-endpoint eps segs o dist))))
-             [])
+     (compute-hull-vertices segs o dist)
+     (compute-hull-surfaces o)
      (conj [segs]))
     ))
