@@ -5,7 +5,7 @@
 (defn- select-segments
   "Select segments for which absolute distance to m is lower than or equal to d"
 
-  [segments m d]
+  [m d segments]
   (filter #(->> (g2d/distance-to-segment %1 m)
                 (Math/abs)
                 (>= d))
@@ -27,7 +27,7 @@
 (defn- trim-segments
   "Trim segments with respect to circle centered on m with radius d"
 
-  [segments m d]
+  [m d segments]
   (let [c (g2d/circle m d)]
     (map #(trim-segment %1 c) segments)))
 
@@ -70,15 +70,13 @@
 
 (defn- merge-angle-sorted-endpoints
   [eps-by-angle]
-  (map (fn [[angle eps]]
-         (let [merged (merge-sorted-endpoints eps)]
-           [angle merged])
-         )
-       eps-by-angle))
+  (for [[angle eps] eps-by-angle]
+    [angle (merge-sorted-endpoints eps)]
+    )
+  )
 
 (defn- compute-far-point
   [{o :o p :p} d]
-
   (let [po (g2d/minus p o)
         l  (g2d/magnitude po)
         n  (g2d/scale po (/ 1.0 l))
@@ -89,9 +87,8 @@
     )
   )
 
-(defn process-one-endpoint
-  [{:keys [point angle] :as ep} segments o dist]
-
+(defn- process-one-endpoint
+  [o dist segments {:keys [point angle] :as ep}]
   (let [ray          (g2d/ray o point)
         tested-segs  (core/compute-non-bearing-segments-list [ep] segments)
         [c :as cols] (core/compute-ray-segments-intersections ray tested-segs) ; c is nil when (empty? cols) is true
@@ -115,8 +112,8 @@
     )
   )
 
-(defn process-many-endpoint
-  [[{:keys [point angle]} :as eps] segments o dist]
+(defn- process-many-endpoint
+  [o dist segments [{:keys [point angle]} :as eps]]
   (let [ray                    (g2d/ray o point) ;; use the first point as origin of the ray
         eps-with-classif       (map (fn[e] [(core/classify-endpoint ray e) e]) eps) ;; ( [classif ep] [classif ep] ... )
         eps-wo-first-collinear (drop-while #(= :collinear (nth %1 0)) eps-with-classif)]
@@ -202,45 +199,74 @@
   )
 
 (defn- compute-hull-vertices
-  [segs o dist eps]
-  (reduce (fn [acc [angle [ep :as eps]]]
-            (into acc
-                  (cond
-                   (= 1 (count eps)) (process-one-endpoint ep segs o dist)
-                   :else             (process-many-endpoint eps segs o dist))))
-          []
-          eps))
+  "Given a sequence of pairs (angle, endpoints) sorted by increasing angle, compute the sequence of endpoints defining the visibility hull.
+
+  For a given angle, endpoints are sorted by increasing distance from the origin.
+
+  Output endpoints are decorated with :role qualifier.
+
+  Input:
+  ((a0 (ep00 ep01 ... ep0n))
+   (a1 (ep10 ep11 ... ep1n))
+   ...
+   (am (epm0 epm1 ... epmn)))
+
+  Output:
+  (ep0 ep1 ... epn)
+  "
+
+  [o dist segs eps-by-angle]
+  (mapcat (fn [[angle eps]]
+            (cond (= 1 (count eps)) (process-one-endpoint o dist segs (first eps))
+                  :else             (process-many-endpoint o dist segs eps)))
+          eps-by-angle))
 
 (defn- compute-hull-surfaces
-  [o eps]
+  "Given a sequence of qualified endpoints, compute the sequence defining the visibility hull.
 
+  Each spitted out surface is a definition of either a triangle or an arc.
+
+  Input:
+  (ep0 ep1 ... epn)
+
+  Output:
+  (s0 s1 ... sn)
+  "
+  [o dist eps]
   (for [[[{a :point angle_a :angle geom_a :geom role_a :role} ca :as epa]
          [{b :point angle_b :angle geom_b :geom role_b :role} cb :as epb]] (take (count eps) (partition 2 1 (cycle eps))) :when (not= angle_a angle_b)]
     (if
-      (or (= :farpoint geom_a geom_b)
-          (and (= :farpoint geom_a) (= :inter geom_b))
-          (and (= :farpoint geom_b) (= :inter geom_a))
-          (and (= :inter geom_b geom_a) (= :out role_a) (= :in role_b)))
-      [:arc epa epb]
-      [:triangle epa epb]
+      (or (= :farpoint geom_a geom_b) ;; 2 far points define an arc
+          (and (= :farpoint geom_a) (= :inter geom_b)) ;; a far point and a circle/segment intersection point ...
+          (and (= :farpoint geom_b) (= :inter geom_a)) ;; ... define an arc (whatever their relative order)
+          (and (= :inter geom_b geom_a) (= :out role_a) (= :in role_b))) ;; 2 circle/segment intersection points define an arc
+                                                                         ;;   if and only  if the first is :out (leaves its bearing segment)
+                                                                         ;;   and the second if :in (enters its bearing segment)
+                                                                         ;; The only possible other case (:in -> :out) defines a segment because
+                                                                         ;; both points belongs to the same segment (by construction)
+                                                                         ;; Other cases are impossible, provided the geometry respects the constraints.
+      [:arc o epa epb dist]
+      [:triangle o epa epb]
       )
     )
   )
 
 (defn compute-visibility-hull
-  [segments o dist]
-  (let [r (-> segments
-              (select-segments o dist)
-              (trim-segments o dist)
-              )
-        segs (remove nil? r)
+  "Given a position, visibility radius and a set of segments, compute
+  the sequences of surface defining the visibility hull
+  "
+  [o dist segments]
+  (let [segs (->> segments
+                  (select-segments o dist)
+                  (trim-segments o dist)
+                  (remove nil?))
         eps (build-endpoint-list segs)]
 
     (->>
-     (core/sort-endpoints-by-angle eps o)
+     (core/sort-endpoints-by-angle o eps)
      (core/group-endpoints-by-angle)
      (merge-angle-sorted-endpoints)
-     (compute-hull-vertices segs o dist)
-     (compute-hull-surfaces o)
+     (compute-hull-vertices o dist segs)
+     (compute-hull-surfaces o dist)
      (conj [segs]))
     ))

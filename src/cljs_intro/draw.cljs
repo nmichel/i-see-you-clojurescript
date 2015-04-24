@@ -77,17 +77,18 @@
           )
         ))))
 
-(defn draw-hull-as-arc
-  [context ox oy surfaces dist img]
+(defn draw-hull-as-surfaces
+  [context surfaces]
   (set! (. context -fillStyle) "yellow")
   (doseq
     [[t
+      {ox :x oy :y}
       [{a :point angle_a :angle} ca]
-      [{b :point angle_b :angle} cb]] surfaces]
+      [{b :point angle_b :angle} cb] :as surf] surfaces]
 
     (if
       (= :arc t)
-      (do
+      (let [dist (nth surf 4)]
         (.beginPath context)
         (.moveTo context ox oy)
         (.lineTo context (:x a) (:y a))

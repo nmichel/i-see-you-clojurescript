@@ -56,43 +56,43 @@
      (empty? eps-wo-first-collinear) []
 
      ;; General case : at least one active endpoint
-     ;; 
+     ;;
      :else (let [tested-segs     (core/compute-non-bearing-segments-list eps segments) ;; only segments not bearing any endpoint
                  [col :as cols]  (core/compute-ray-segments-intersections ray tested-segs) ;; c is nil when (empty? cols) is true
                  [c1 ep1 :as e1] (first eps-wo-first-collinear)]
 
              (cond
               ;; There is at least a collision, and the nearest if before the first ep
-              ;; 
+              ;;
               (and (not (nil? col)) (< (:f col) 1)) [[(:p col) "black"]]
 
               ;; The first ep is :cross
               ;;
               (= :cross c1) [[(:point ep1) "white"]]
-                                          
+
               ;; First ep is :out
               ;; Search for first :in or :cross (is any)
-              ;; 
+              ;;
               (= :out c1) (let [[c2 p2] (first (filter (fn[[c2]] (or (= :in c2)(= :cross c2))) (rest eps-wo-first-collinear)))]
                             (cond
                              ;; No closing ep found
-                             ;; 
+                             ;;
                              (nil? c2) (cond
                                         ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
-                                        ;; 
+                                        ;;
                                         (nil? col) [[(:point ep1) "white"]]
                                         ;; no closing, but a col
-                                        ;; 
+                                        ;;
                                         :else [[(:point ep1) "green"] [(:p col) "blue"]]
                                         )
 
                             ;; A closing ep and no col
-                            ;; 
+                            ;;
                             (nil? col) [[(:point ep1) "green"] [(:point p2) "blue"]]
 
                              ;; A closing ep. Depending on the relative positions of the closing point and the
                              ;; closest collision, use one or the other as the second point
-                             ;; 
+                             ;;
                              :else (let [r2 (g2d/ratio ray (:point p2))
                                          p (if (< (:f col) r2) (:p col) (:point p2))]
                                      [[(:point ep1) "green"] [p "blue"]])
@@ -101,27 +101,27 @@
 
               ;; First ep is :in
               ;; Search for first :out or :cross (is any)
-              ;; 
+              ;;
               (= :in c1) (let [[c2 p2] (first (filter (fn[[c2]] (or (= :out c2)(= :cross c2))) (rest eps-wo-first-collinear)))]
                            (cond
                             ;; No closing ep found
-                            ;; 
+                            ;;
                             (nil? c2) (cond
                                        ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
-                                       ;; 
+                                       ;;
                                        (nil? col) [[(:point ep1) "white"]]
                                        ;; no closing, but a col
-                                       ;; 
+                                       ;;
                                        :else [[(:p col) "green"] [(:point ep1) "blue"]]
                                        )
 
                             ;; A closing ep and no col
-                            ;; 
+                            ;;
                             (nil? col) [[(:point p2) "green"] [(:point ep1) "blue"]]
 
                              ;; A closing ep. Depending on the relative positions of the closing point and the
                              ;; closest collision, use one or the other as the second point
-                             ;; 
+                             ;;
                              :else (let [r2 (g2d/ratio ray (:point p2))
                                          p (if (< (:f col) r2) (:p col) (:point p2))]
                                      [[p "green"] [(:point ep1) "blue"]])
@@ -135,18 +135,18 @@
 
 (defn compute-visibility-hull
   "Compute the geometry of the visibility hull from
+      . the \"light\" position
       . a set of endpoints
       . a set of non intersecting segments, joining points from the above set
-      . the \"light\" position
 
   Return a list of [p c] where
       . p is g2d/vec2d
       . c is metadata associated to p
 
   Point are ordered with respect to their polar coordinate."
-  
-  [eps segments o]
-  (->> (core/sort-endpoints-by-angle eps o)
+
+  [o eps segments]
+  (->> (core/sort-endpoints-by-angle o eps)
        (core/group-endpoints-by-angle)
        (reduce (fn [acc [angle [ep :as eps]]]
                  (into acc

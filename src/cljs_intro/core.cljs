@@ -5,7 +5,7 @@
 (defn dump-vec
   [{x :x y :y}]
   (string/join ["[x: " (.toString x) ", y: " (.toString y) "]"]))
-  
+
 (defn dump-segment
   [{a :a b :b}]
   (string/join ["< " (dump-vec a) (dump-vec b) " >"]))
@@ -81,8 +81,8 @@
    sorted by increasing distance to origin.
 
    Each endpoint is also tagged with the angle it lies with key :angle"
-  
-  [eps o]
+
+  [o eps]
   (->>
    (reduce (fn [acc {p :point :as ep}]
              (let [{angle :theta :as polar} (g2d/->polar (g2d/minus p o))]
@@ -111,7 +111,7 @@
             [(:theta first-polar) [first-ep]]] ;; init acc with first endpoint
            tail)
    ((fn [[out acc]]
-      (conj out acc) ;; Merge last angle/endpoints into final result 
+      (conj out acc) ;; Merge last angle/endpoints into final result
       ))))
 
 (defn compute-ray-segments-intersections
