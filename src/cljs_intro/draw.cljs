@@ -18,68 +18,52 @@
   )
 
 (defn draw-hull-by-clipping
-  [context ox oy pts img]
-  (let [poly-count (count pts)
-        pts-source (cycle pts)
-        [p c] (first pts-source)]
-    (.save context)
-    (.beginPath context)
-    (.moveTo context (:x p) (:y p))
-    (loop [cnt poly-count
-           pts (rest pts-source)]
-      (if (= 0 cnt)
-        (.clip context)
-        (let [[[a] & tail] pts]
-          (.lineTo context (:x a) (:y a))
-          (recur (- cnt 1) tail)
-          ))))
-  (draw-rect context 0 0 800 600 "green") ;;(.drawImage context img 0 0 800 600)
-  (.restore context)
+  [context ox oy [[p _pcolor] & pts] img]
+  (doto context
+    (.save)
+    (.beginPath)
+    (.moveTo (:x p) (:y p))
+    )
+  (doseq [[a _acolor] pts]
+    (.lineTo context (:x a) (:y a))
+    )
+  (doto context
+    (.clip)
+    (draw-rect 0 0 800 600 "green") ;;(.drawImage context img 0 0 800 600)
+    (.restore)
+    )
   )
 
 (defn draw-hull-as-polygon
-  [context ox oy pts img]
-  (let [poly-count (count pts)
-        pts-source (cycle pts)
-        [p c] (first pts-source)]
-    (set! (. context -fillStyle) "yellow") ;; (set! (. context -strokeStyle) "yellow")
-    (set! (.-lineWidth context) 2)
-    (.beginPath context)
-    (.moveTo context (:x p) (:y p))
-    (loop [cnt poly-count
-           pts (rest pts-source)]
-      (if (= 0 cnt)
-        (.fill context) ;; (.stroke context)
-        (let [[[a] & tail] pts]
-          (.lineTo context (:x a) (:y a))
-          (recur (- cnt 1) tail)
-          )))))
+  [context ox oy [[p _pcolor] & pts]]
+  (set! (. context -fillStyle) "yellow")
+  ;; (set! (. context -strokeStyle) "yellow")
+  (set! (.-lineWidth context) 2)
+  (.beginPath context)
+  (.moveTo context (:x p) (:y p))
+  (doseq [[a _acolor] pts]
+    (.lineTo context (:x a) (:y a))
+    )
+  (.fill context)
+  )
 
 (defn draw-hull-as-fan
   [context ox oy pts img]
-  (let [poly-count (count pts)
-        pts-source (partition 2 1 (cycle pts))]
-    (set! (. context -fillStyle) "yellow")
-    (set! (. context -strokeStyle) "orange")
-    (set! (.-lineWidth context) 2)
-    (loop [cnt poly-count
-           pts pts-source]
-      (if (< 0 cnt)
-        (let [pair (first pts)
-              [a ca] (first pair)
-              [b cb] (second pair)]
-          (doto context
-            (.beginPath)
-            (.moveTo (:x a) (:y a))
-            (.lineTo ox oy)
-            (.lineTo (:x b) (:y b))
-            (.lineTo (:x a) (:y a))
-            (.fill)
-            (.stroke)
-            )
-          (recur (dec cnt) (rest pts))
-          )
-        ))))
+  (set! (. context -fillStyle) "yellow")
+  (set! (. context -strokeStyle) "orange")
+  (set! (.-lineWidth context) 2)
+  (doseq [[[{ax :x ay :y} ca] [{bx :x by :y} cb]] (->> pts (cycle) (partition 2 1) (take (count pts)))]
+    (doto context
+      (.beginPath)
+      (.moveTo ax ay)
+      (.lineTo ox oy)
+      (.lineTo bx by)
+      (.lineTo ax ay)
+      (.fill)
+      (.stroke)
+      )
+    )
+  )
 
 (defn draw-hull-as-surfaces
   [context surfaces]
@@ -115,18 +99,17 @@
 
 (defn draw-geometry
   [context data]
-  (doseq [d data]
-    (let [{point :point :as ep} (first d)]
-      (set! (. context -strokeStyle) "red")
-      (set! (.-lineWidth context) 2)
-      (.beginPath context)
-      (.moveTo context (:x point) (:y point))
-      (doseq [{point :point} (rest d)]
-        (.lineTo context (:x point) (:y point)))
-      (if (> (count (:segments ep)) 1)
-        (.lineTo context (:x point) (:y point)))
-      (.stroke context)
-      ))
+  (set! (. context -strokeStyle) "red")
+  (set! (.-lineWidth context) 2)
+  (doseq [d data :let [{point :point :as ep} (first d)]]
+    (.beginPath context)
+    (.moveTo context (:x point) (:y point))
+    (doseq [{point :point} (rest d)]
+      (.lineTo context (:x point) (:y point)))
+    (when (> (count (:segments ep)) 1)
+      (.lineTo context (:x point) (:y point)))
+    (.stroke context)
+    )
   )
 
 (defn draw-hull-vertices
