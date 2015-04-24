@@ -3,10 +3,12 @@
             [cljs-intro.core :as core]))
 
 (defn draw-point [context {x :x y :y} color]
-  (.beginPath context)
-  (.arc context x y 5 0 (* 2.0 Math/PI) false)
   (set! (. context -fillStyle) color)
-  (.fill context)
+  (doto context
+    (.beginPath)
+    (.arc x y 5 0 (* 2.0 Math/PI) false)
+    (.fill)
+    )
   )
 
 (defn draw-rect
@@ -66,13 +68,15 @@
         (let [pair (first pts)
               [a ca] (first pair)
               [b cb] (second pair)]
-          (.beginPath context)
-          (.moveTo context (:x a) (:y a))
-          (.lineTo context ox oy)
-          (.lineTo context (:x b) (:y b))
-          (.lineTo context (:x a) (:y a))
-          (.fill context)
-          (.stroke context)
+          (doto context
+            (.beginPath)
+            (.moveTo (:x a) (:y a))
+            (.lineTo ox oy)
+            (.lineTo (:x b) (:y b))
+            (.lineTo (:x a) (:y a))
+            (.fill)
+            (.stroke)
+            )
           (recur (dec cnt) (rest pts))
           )
         ))))
@@ -89,19 +93,21 @@
     (if
       (= :arc t)
       (let [dist (nth surf 4)]
-        (.beginPath context)
-        (.moveTo context ox oy)
-        (.lineTo context (:x a) (:y a))
-        (.arc context ox oy dist angle_a angle_b false)
-        (.fill context)
+        (doto context
+          (.beginPath)
+          (.moveTo ox oy)
+          (.lineTo (:x a) (:y a))
+          (.arc ox oy dist angle_a angle_b false)
+          (.fill)
+          )
         )
-      (do
-        (.beginPath context)
-        (.moveTo context (:x a) (:y a))
-        (.lineTo context ox oy)
-        (.lineTo context (:x b) (:y b))
-        (.lineTo context (:x a) (:y a))
-        (.fill context)
+      (doto context
+        (.beginPath)
+        (.moveTo (:x a) (:y a))
+        (.lineTo ox oy)
+        (.lineTo (:x b) (:y b))
+        (.lineTo (:x a) (:y a))
+        (.fill)
         )
       )
     )
@@ -133,10 +139,12 @@
 (defn draw-endpoints
   [context eps]
   (doseq [{{x :x y :y} :point} eps]
-    (.beginPath context)
-    (.arc context x y 5 0 (* 2.0 Math/PI) false)
     (set! (. context -fillStyle) "red")
-    (.fill context)
+    (doto context
+      (.beginPath)
+      (.arc x y 5 0 (* 2.0 Math/PI) false)
+      (.fill)
+      )
     ))
 
 (defn draw-segments
@@ -144,8 +152,10 @@
   (set! (. context -strokeStyle) "cyan")
   (set! (.-lineWidth context) 2)
   (doseq [{{x1 :x y1 :y} :a {x2 :x y2 :y} :b} segments]
-    (.beginPath context)
-    (.moveTo context x1 y1)
-    (.lineTo context x2 y2)
-    (.stroke context)
+    (doto context
+      (.beginPath)
+      (.moveTo x1 y1)
+      (.lineTo x2 y2)
+      (.stroke)
+      )
     ))

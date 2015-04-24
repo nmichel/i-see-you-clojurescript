@@ -16,10 +16,10 @@
 ;;(def geom (data/produce-dev-data-4))
 ;;(def geom (data/produce-parallel-vertical-segments-soup))
 ;;(def geom (data/produce-parallel-horizontal-segments-soup))
-(def geom (data/produce-square-soup 12 6 25 20 25))
+;;(def geom (data/produce-square-soup 12 6 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 100 20 20))
-;;(def geom (data/produce-block-soup))
+(def geom (data/produce-block-soup))
 
 (defn- build-dynamic-data
   []
@@ -93,13 +93,13 @@
         o                       (g2d/vec2d x y)
         erase-color             "grey"]
     (draw/draw-rect context 0 0 width height erase-color)
-    ;;(draw/draw-geometry context drawdata)
+    (draw/draw-geometry context drawdata)
     (draw/draw-hull-as-surfaces context hull)
-    ;;(draw/draw-hull-as-fan context x y hull img)
-    ;;(draw/draw-hull-by-clipping context x y hull img)
+    ;;(draw/draw-hull-as-fan context x y hull img) ;; work only with global/compute-visibility-hull output
+    ;;(draw/draw-hull-by-clipping context x y hull img) ;; work only with global/compute-visibility-hull output
+    ;;(draw/draw-hull-vertices context hull) ;; work only with global/compute-visibility-hull output
     (draw/draw-segments context segs)
     ;;(draw/draw-endpoints context eps)
-    ;;(draw/draw-hull-vertices context hull)
     (draw/draw-point context o "lightblue")
     ))
 
