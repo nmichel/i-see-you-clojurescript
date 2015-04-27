@@ -97,7 +97,7 @@
     (draw/draw-hull-as-surfaces context hull)
     ;;(draw/draw-hull-as-polygon context x y hull) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-as-fan context x y hull img) ;; work only with global/compute-visibility-hull output
-    (draw/draw-hull-by-clipping context x y hull img) ;; work only with global/compute-visibility-hull output
+    ;;(draw/draw-hull-by-clipping context x y hull img) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-vertices context hull) ;; work only with global/compute-visibility-hull output
     (draw/draw-segments context segs)
     ;;(draw/draw-endpoints context eps)

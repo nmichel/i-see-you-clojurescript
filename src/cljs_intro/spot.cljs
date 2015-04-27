@@ -94,18 +94,18 @@
         [c :as cols] (core/compute-ray-segments-intersections ray tested-segs) ; c is nil when (empty? cols) is true
         classif      (core/classify-endpoint ray ep)]
     (if (and (not (nil? c)) (< (:f c) 1))
-      [[(->
-         (g2d/endpoint (:p c) [])
-         (qualify-endpoint-geom :collision)
-         (qualify-endpoint-role :collision)
-         (core/qualify-endpoint-angle angle)) "black"]]
+      [(->
+        (g2d/endpoint (:p c) [])
+        (qualify-endpoint-geom :collision)
+        (qualify-endpoint-role :collision)
+        (core/qualify-endpoint-angle angle))]
       (let [col (if (empty? cols)
                   (-> (compute-far-point ray dist) (:p) (g2d/endpoint []) (qualify-endpoint-geom :farpoint) (core/qualify-endpoint-angle angle))
                   (-> c                            (:p) (g2d/endpoint []) (qualify-endpoint-geom :collision) (core/qualify-endpoint-angle angle)))]
         (cond
-         (= classif :cross) [[(qualify-endpoint-role ep :cross) "yellow"]]
-         (= classif :in)    [[(-> (qualify-endpoint-role col :out) (core/qualify-endpoint-angle angle)) "green"] [(qualify-endpoint-role ep :in) "blue"]]
-         (= classif :out)   [[(qualify-endpoint-role ep :out) "green"] [(-> (qualify-endpoint-role col :in) (core/qualify-endpoint-angle angle)) "blue"]]
+         (= classif :cross) [(qualify-endpoint-role ep :cross)]
+         (= classif :in)    [(-> (qualify-endpoint-role col :out) (core/qualify-endpoint-angle angle)) (qualify-endpoint-role ep :in)]
+         (= classif :out)   [(qualify-endpoint-role ep :out) (-> (qualify-endpoint-role col :in) (core/qualify-endpoint-angle angle))]
          )
         )
       )
@@ -142,11 +142,11 @@
                (cond
                 ;; the nearest collision if before the first ep
                 ;;
-                (< fcol 1) [[(qualify-endpoint-role col :collision) "black"]]
+                (< fcol 1) [(qualify-endpoint-role col :collision)]
 
                 ;; The first ep is :cross
                 ;;
-                (= :cross c1) [[(qualify-endpoint-role ep1 :cross) "white"]]
+                (= :cross c1) [(qualify-endpoint-role ep1 :cross)]
 
                 ;; First ep is :out
                 ;; Search for first :in or :cross (is any)
@@ -155,18 +155,18 @@
                               (cond
                                ;; No closing ep found
                                ;;
-                               (nil? c2) [[(qualify-endpoint-role ep1 :out) "green"] [(qualify-endpoint-role col :in) "blue"]]
+                               (nil? c2) [(qualify-endpoint-role ep1 :out) (qualify-endpoint-role col :in)]
 
                                ;; A closing ep and no col
                                ;;
-                               (nil? col) [[(qualify-endpoint-role ep1 :out) "green"] [(qualify-endpoint-role p2 :in) "blue"]]
+                               (nil? col) [(qualify-endpoint-role ep1 :out) (qualify-endpoint-role p2 :in)]
 
                                ;; A closing ep. Depending on the relative positions of the closing point and the
                                ;; closest collision, use one or the other as the second point
                                ;;
                                :else (let [r2 (g2d/ratio ray (:point p2))
                                            p (if (< fcol r2) col p2)]
-                                       [[(qualify-endpoint-role ep1 :out) "green"] [(qualify-endpoint-role p :in) "blue"]])
+                                       [(qualify-endpoint-role ep1 :out) (qualify-endpoint-role p :in)])
                                )
                               )
 
@@ -177,18 +177,18 @@
                              (cond
                               ;; No closing ep found
                               ;;
-                              (nil? c2) [[(qualify-endpoint-role col :in) "green"] [(qualify-endpoint-role ep1 :out) "blue"]]
+                              (nil? c2) [(qualify-endpoint-role col :in) (qualify-endpoint-role ep1 :out)]
 
                               ;; A closing ep and no col
                               ;;
-                              (nil? col) [[(qualify-endpoint-role p2 :in) "green"] [(qualify-endpoint-role ep1 :out) "blue"]]
+                              (nil? col) [(qualify-endpoint-role p2 :in) (qualify-endpoint-role ep1 :out)]
 
                               ;; A closing ep. Depending on the relative positions of the closing point and the
                               ;; closest collision, use one or the other as the second point
                               ;;
                               :else (let [r2 (g2d/ratio ray (:point p2))
                                           p (if (< fcol r2) col p2)]
-                                      [[(qualify-endpoint-role p :in) "green"] [(qualify-endpoint-role ep1 :out) "blue"]])
+                                      [(qualify-endpoint-role p :in) (qualify-endpoint-role ep1 :out)])
                               )
                              )
                 )
@@ -233,8 +233,8 @@
   (s0 s1 ... sn)
   "
   [o dist eps]
-  (for [[[{a :point angle_a :angle geom_a :geom role_a :role} ca :as epa]
-         [{b :point angle_b :angle geom_b :geom role_b :role} cb :as epb]] (take (count eps) (partition 2 1 (cycle eps))) :when (not= angle_a angle_b)]
+  (for [[{a :point angle_a :angle geom_a :geom role_a :role :as epa}
+         {b :point angle_b :angle geom_b :geom role_b :role :as epb}] (->> (cycle eps) (partition 2 1) (take (count eps))) :when (not= angle_a angle_b)]
     (if
       (or (= :farpoint geom_a geom_b) ;; 2 far points define an arc
           (and (= :farpoint geom_a) (= :inter geom_b)) ;; a far point and a circle/segment intersection point ...

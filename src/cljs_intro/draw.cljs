@@ -71,8 +71,8 @@
   (doseq
     [[t
       {ox :x oy :y}
-      [{a :point angle_a :angle} ca]
-      [{b :point angle_b :angle} cb] :as surf] surfaces]
+      {a :point angle_a :angle}
+      {b :point angle_b :angle} :as surf] surfaces]
 
     (if
       (= :arc t)
