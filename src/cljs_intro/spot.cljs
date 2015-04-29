@@ -6,10 +6,12 @@
   "Select segments for which absolute distance to m is lower than or equal to d"
 
   [m d segments]
-  (filter #(->> (g2d/distance-to-segment %1 m)
-                (Math/abs)
-                (>= d))
-          segments))
+  (filter #(let [sd (-> (g2d/distance-to-segment %1 m) (Math/abs))]
+             (and (< sd d)  ;; distance to segment must be STRICTLY lower than distance to horizon (reject tangent segments)
+                  (> sd 0)) ;; ... but also STRICTLY positive (if the observer lies ON a segment, ignore it)
+             )
+          segments)
+  )
 
 (defn- trim-segment
   "Trim segment s with respect to circle c"
