@@ -221,7 +221,8 @@
   (mapcat (fn [[angle eps]]
             (cond (= 1 (count eps)) (process-one-endpoint o dist segs (first eps))
                   :else             (process-many-endpoint o dist segs eps)))
-          eps-by-angle))
+          eps-by-angle)
+  )
 
 (defn- compute-hull-surfaces
   "Given a sequence of qualified endpoints, compute the sequence defining the visibility hull.
@@ -235,20 +236,42 @@
   (s0 s1 ... sn)
   "
   [o dist eps]
-  (for [[{a :point angle_a :angle geom_a :geom role_a :role :as epa}
-         {b :point angle_b :angle geom_b :geom role_b :role :as epb}] (->> (cycle eps) (partition 2 1) (take (count eps))) :when (not= angle_a angle_b)]
-    (if
-      (or (= :farpoint geom_a geom_b) ;; 2 far points define an arc
-          (and (= :farpoint geom_a) (= :inter geom_b)) ;; a far point and a circle/segment intersection point ...
-          (and (= :farpoint geom_b) (= :inter geom_a)) ;; ... define an arc (whatever their relative order)
-          (and (= :inter geom_b geom_a) (= :out role_a) (= :in role_b))) ;; 2 circle/segment intersection points define an arc
-                                                                         ;;   if and only  if the first is :out (leaves its bearing segment)
-                                                                         ;;   and the second if :in (enters its bearing segment)
-                                                                         ;; The only possible other case (:in -> :out) defines a segment because
-                                                                         ;; both points belongs to the same segment (by construction)
-                                                                         ;; Other cases are impossible, provided the geometry respects the constraints.
-      [:arc o epa epb dist]
-      [:triangle o epa epb]
+  (if (empty? eps)
+    []
+    (let [pts (drop-while (fn [{role :role}] (= role :collision)) (cycle eps))] ;; Start from a non collision point (as they will be dropped)
+      (->
+       (reduce (fn [[acc {a :point angle_a :angle geom_a :geom role_a :role :as epa}]
+                    {b :point angle_b :angle geom_b :geom role_b :role :as epb}]
+                 (cond
+                  (= angle_a angle_b)
+                    [acc epb]
+
+                  (or (= :farpoint geom_a geom_b) ;; 2 far points define an arc
+                      (and (= :farpoint geom_a) (= :inter geom_b)) ;; a far point and a circle/segment intersection point ...
+                      (and (= :farpoint geom_b) (= :inter geom_a)) ;; ... define an arc (whatever their relative order)
+                      (and (= :inter geom_b geom_a) (= :out role_a) (= :in role_b))) ;; 2 circle/segment intersection points define an arc
+                                                                                     ;;   if and only  if the first is :out (leaves its bearing segment)
+                                                                                     ;;   and the second if :in (enters its bearing segment)
+                                                                                     ;; The only possible other case (:in -> :out) defines a segment because
+                                                                                     ;; both points belongs to the same segment (by construction)
+                                                                                     ;; Other cases are impossible, provided the geometry respects the constraints.
+                    [(conj acc [:arc o epa epb dist]) epb]
+
+                  (or (= :out role_b) (= :cross role_b) (= :in role_b))
+                    [(conj acc [:triangle o epa epb]) epb]
+
+                  :else
+                    [acc epa]
+                  )
+                 )
+               [
+                [] ;; acc empty
+                (first pts) ;; current endpoint is the first
+                ]
+               (->> (rest pts) (take (count eps)))
+               )
+       (nth 0)
+       )
       )
     )
   )
