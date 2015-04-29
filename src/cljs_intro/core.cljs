@@ -119,7 +119,8 @@
   (->> segments
        (reduce (fn [acc s]
                  (let [i (g2d/intersection ray s)]
-                   (if (= i nil)
+                   (if (or (= i nil) ;; no collision => reject
+                           (= (:f i) 0)) ;; ray's origin lies ON the segment => reject collision (the bearing segment is considered as non colliding)
                      acc
                      (conj acc i))))
                [])
