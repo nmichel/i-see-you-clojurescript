@@ -68,6 +68,8 @@
 (defn draw-hull-as-surfaces
   [context surfaces]
   (set! (. context -fillStyle) "yellow")
+  (set! (. context -strokeStyle) "red")
+  (set! (.-lineWidth context) 2)
   (doseq
     [[t
       {ox :x oy :y}
@@ -80,18 +82,25 @@
         (doto context
           (.beginPath)
           (.moveTo ox oy)
-          (.lineTo (:x a) (:y a))
           (.arc ox oy dist angle_a angle_b false)
           (.fill)
           )
         )
-      (doto context
-        (.beginPath)
-        (.moveTo (:x a) (:y a))
-        (.lineTo ox oy)
-        (.lineTo (:x b) (:y b))
-        (.lineTo (:x a) (:y a))
-        (.fill)
+      (do
+        (doto context
+          (.beginPath)
+          (.moveTo (:x a) (:y a))
+          (.lineTo ox oy)
+          (.lineTo (:x b) (:y b))
+          (.lineTo (:x a) (:y a))
+          (.fill)
+          )
+        (doto context
+          (.beginPath)
+          (.moveTo (:x a) (:y a))
+          (.lineTo (:x b) (:y b))
+          (.stroke)
+          )
         )
       )
     )
