@@ -151,3 +151,15 @@
       (.stroke)
       )
     ))
+
+(defn draw-pie
+  [context ox oy dist alpha beta]
+  (set! (. context -strokeStyle) "green")
+  (set! (.-lineWidth context) 2)
+  (doto context
+    (.beginPath)
+    (.moveTo ox oy)
+    (.arc ox oy dist alpha beta false)
+    (.lineTo ox oy)
+    (.stroke)
+    ))

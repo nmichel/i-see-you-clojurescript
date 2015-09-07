@@ -178,3 +178,15 @@
           :else           [false nil]            ;; segment doesn't cross the circle
           )))))
 
+;; -----
+
+
+(defn remap-angle
+  "Remap any angle returned by function atan2 in range [0, 2*PI]"
+  [x]
+  (if (> x 0) x (+ x (* 2 Math/PI))))
+
+(defn deg->rad [d] (-> d (* Math/PI) (/ 180.0)))
+(defn rad->deg [r] (-> r (* 180.0) (/ Math/PI)))
+
+

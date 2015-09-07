@@ -1,64 +1,69 @@
 (ns cljs-intro.pie
   (:require [cljs-intro.core :as core]
-            [cljs-intro.g2d :as g2d]))
+            [cljs-intro.g2d :as g2d :refer [remap-angle]]))
 
-(defn- select-segments
+(defn- is-in-range?
+  [a p q]
+  (<= p a q))
+
+(defn- is-segment-near-point?
   "Select segments for which absolute distance to m is lower than or equal to d"
 
-  [m d segments]
-  (filter #(let [sd (-> (g2d/distance-to-segment %1 m) (Math/abs))]
-             (and (< sd d)  ;; distance to segment must be STRICTLY lower than distance to horizon (reject tangent segments)
-                  (> sd 0)) ;; ... but also STRICTLY positive (if the observer lies ON a segment, ignore it)
-             )
-          segments)
+  [m d s]
+  (let [sd (-> (g2d/distance-to-segment s m) (Math/abs))]
+    (and (< sd d)   ;; distance to segment must be STRICTLY lower than distance to horizon (reject tangent segments)
+         (> sd 0))) ;; ... but also STRICTLY positive (if the observer lies ON a segment, ignore it)
   )
 
-(defn- remap-angle
-  "Remap any angle returned by function atan2 in range [0, 2*PI]"
-  [x]
-  (if (> x 0) x (+ x (* 2 Math/PI)) ))
-
-(defn- is-segment-out-of-pie-piece?
+(defn- is-segment-outside-pie-piece?
   "Return true if segment s is totally out of the piece of pie defined by
-   center o, direction angle a, and half apperture angle h."
-  [o a h {a :a b :b :as s}]
+   center o, direction angle alpha, and half apperture angle h."
+  [o alpha h {a :a b :b :as s}]
+  (let [PI   Math/PI
+        PI2  (* PI 0.5)
+        PI32 (/ (* PI 3) 2)
+        h+   (remap-angle h)
+        h-   (remap-angle (- h))
+        ra   (-> (g2d/->polar o a) (:theta) (- alpha) (remap-angle))
+        rb   (-> (g2d/->polar o b) (:theta) (- alpha) (remap-angle))]
+    (if (or (is-in-range? ra 0 h+)
+            (is-in-range? ra h- (* 2 PI))
+            (is-in-range? rb 0 h+)
+            (is-in-range? rb h- (* 2 PI)))
+      false ;; at least one in (a, b) lies in visible range [0, h+] U [h-, 2PI]
+      (or (and (is-in-range? ra h+ PI) (is-in-range? rb h+ PI))
+          (and (is-in-range? ra PI h-) (is-in-range? rb PI h-))
+          (and (< h PI2) (let [minab (Math/min ra rb)
+                               maxab (Math/max ra rb)
+                               dtad  (- maxab minab)]
+                           (< dtad PI)
+                           ))
+        ))))
+
+(defn- is-segment-inside-pie-piece?
+  "Return true if segment s is totally inside the piece of pie defined by
+   center o, direction angle alpha, and half apperture angle h."
+  [o alpha h {a :a b :b :as s}]
   (let [h+  (remap-angle h)
         h-  (remap-angle (- h))
-        ra (-> (g2d/->polar o da) (:theta) (remap-angle) (- alpha) (remap-angle))
-        rb (-> (g2d/->polar o db) (:theta) (remap-angle) (- alpha) (remap-angle))
-    (and (or (> ra h-) (< ra h+))
-         (or (> rb h-) (< rb h+)))))
+        ra (-> (g2d/->polar o a) (:theta) (remap-angle) (- alpha) (remap-angle))
+        rb (-> (g2d/->polar o b) (:theta) (remap-angle) (- alpha) (remap-angle))]
+     (and (or (> ra h-) (< ra h+))
+          (or (> rb h-) (< rb h+)))
+    ))
 
-(defn- trim-segment
-  "Trim segment s with respect to circle c"
-
-  [{a :a b :b :as s} {o :o :as c}]
-  (let [[col? cols] (g2d/intersection-segment-circle c s)
-        ;; from atan2 to [0 -> 2PI[ : (x > 0 ? x : (2*PI + x))
-        epsilon     0.1
-        alpha       (* Math/PI 0.7)
-        beta+       (* Math/PI 0.4)
-        beta-       (remap-angle (- beta+))
-        ]
+(defn- trim-segment-by-circle
+  "Trim segment s with respect to circle c.
+  "
+  [c {a :a b :b :as s}]
+  (let [[col? cols] (g2d/intersection-segment-circle c s)]
     (when col?
       (let [ta (if (nil? (cols :t1)) a (g2d/stretch s (cols :t1)))
             tb (if (nil? (cols :t2)) b (g2d/stretch s (cols :t2)))
             ma (if (nil? (cols :t1)) :geom :inter)
             mb (if (nil? (cols :t2)) :geom :inter)]
-        (let [ata (remap-angle (:theta (g2d/->polar o ta)))
-              atb (remap-angle (:theta (g2d/->polar o tb)))
-              bta (remap-angle (- ata alpha))
-              btb (remap-angle (- atb alpha))]
-
-          (if (and (or (> bta beta-) (< bta beta+)) (or (> btb beta-) (< btb beta+)))
-              (assoc s :a ta :b tb :ma ma :mb mb)))))))
-
-(defn- trim-segments
-  "Trim segments with respect to circle centered on m with radius d"
-
-  [m d segments]
-  (let [c (g2d/circle m d)]
-    (map #(trim-segment %1 c) segments)))
+        (assoc s :a ta :b tb :ma ma :mb mb)
+        ))))
 
 (defn- qualify-endpoint-geom
   [ep kind]
@@ -303,14 +308,18 @@
     )
   )
 
+(def *alpha* (g2d/deg->rad 100))
+(def *apperture* (g2d/deg->rad 30.0))
+
 (defn compute-visibility-hull
   "Given a position, visibility radius and a set of segments, compute
   the sequences of surface defining the visibility hull
   "
   [o dist segments]
   (let [segs (->> segments
-                  (select-segments o dist)
-                  (trim-segments o dist)
+                  (remove (partial is-segment-outside-pie-piece? o *alpha* *apperture*))
+                  (filter (partial is-segment-near-point? o dist))
+                  (map (partial trim-segment-by-circle (g2d/circle o dist)))
                   (remove nil?))
         eps (build-endpoint-list segs)]
 

@@ -69,8 +69,6 @@
         height   (.-height target)
         r-geom   (build-dynamic-data)]
 
-    ;;(set! (.-src img) "http://upload.wikimedia.org/wikipedia/commons/e/ea/Selwyn_College_Old_Court%2C_Cambridge%2C_UK_-_Diliff.jpg")
-
     {:target  target
      :context context
      :img     img
@@ -87,6 +85,10 @@
     )
   )
 
+
+(def *alpha* (g2d/deg->rad 100))
+(def *apperture* (g2d/deg->rad 30.0))
+
 (defn- render-game
   [{:keys [img width height segs hull x y context eps dynamic dist] :as state}]
   (let [[drawdata eps _allsegs] dynamic
@@ -96,6 +98,7 @@
     ;;(draw/draw-geometry context drawdata)
     (draw/draw-segments context segs)
     (draw/draw-hull-as-surfaces context hull)
+    (draw/draw-pie context x y dist (-> (- *alpha* *apperture*) (g2d/remap-angle)) (-> (+ *alpha* *apperture*) (g2d/remap-angle))) ;; work only with pie/compute-visibility-hull output
     ;;(draw/draw-hull-as-polygon context x y hull) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-as-fan context x y hull img) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-by-clipping context x y hull img) ;; work only with global/compute-visibility-hull output
@@ -134,6 +137,7 @@
         alpha       (:alpha state)
         [dd de ds]  static ;; [dd de ds] (build-data static r-geom alpha)
         [segs hull] (pie/compute-visibility-hull o dist ds)
+        ;;[segs hull] (spot/compute-visibility-hull o dist ds)
         ;;hull       (global/compute-visibility-hull o de ds)
         new-state   (assoc state
                       :segs segs
