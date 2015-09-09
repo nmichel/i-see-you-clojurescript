@@ -26,19 +26,32 @@
         h-   (remap-angle (- h))
         ra   (-> (g2d/->polar o a) (:theta) (- alpha) (remap-angle))
         rb   (-> (g2d/->polar o b) (:theta) (- alpha) (remap-angle))]
-    (if (or (is-in-range? ra 0 h+)
-            (is-in-range? ra h- (* 2 PI))
-            (is-in-range? rb 0 h+)
-            (is-in-range? rb h- (* 2 PI)))
-      false ;; at least one in (a, b) lies in visible range [0, h+] U [h-, 2PI]
-      (or (and (is-in-range? ra h+ PI) (is-in-range? rb h+ PI))
-          (and (is-in-range? ra PI h-) (is-in-range? rb PI h-))
-          (and (< h PI2) (let [minab (Math/min ra rb)
-                               maxab (Math/max ra rb)
-                               dtad  (- maxab minab)]
-                           (< dtad PI)
-                           ))
-        ))))
+    (cond
+     ;; at least one in (a, b) lies in visible range [0, h+] U [h-, 2PI]
+     ;;
+     (or (is-in-range? ra 0 h+)
+         (is-in-range? ra h- (* 2 PI))
+         (is-in-range? rb 0 h+)
+         (is-in-range? rb h- (* 2 PI)))
+       false
+
+     ;; Half apperture if greater than PI/2
+     ;; Therefore the segment can not be visible (otherwise at least one of its extremities
+     ;; would have been visible
+     ;;
+     (> h PI2)
+       true
+
+     ;; If half apperture is less than PI/2, the segment [ab] is out of sight if the angular distance
+     ;; between its extremities is lower than PI.
+     ;;
+     :else
+       (let [minab (Math/min ra rb)
+             maxab (Math/max ra rb)
+             dtad  (- maxab minab)]
+         (< dtad PI)
+         )
+     )))
 
 (defn- is-segment-inside-pie-piece?
   "Return true if segment s is totally inside the piece of pie defined by
@@ -320,6 +333,8 @@
                   (remove (partial is-segment-outside-pie-piece? o *alpha* *apperture*))
                   (filter (partial is-segment-near-point? o dist))
                   (map (partial trim-segment-by-circle (g2d/circle o dist)))
+                  (remove nil?)
+                  (remove (partial is-segment-outside-pie-piece? o *alpha* *apperture*))
                   (remove nil?))
         eps (build-endpoint-list segs)]
 
