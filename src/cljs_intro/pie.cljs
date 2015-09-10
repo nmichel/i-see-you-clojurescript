@@ -78,6 +78,24 @@
         (assoc s :a ta :b tb :ma ma :mb mb)
         ))))
 
+(defn- trim-segment-by-angle
+  ""
+  [o d a h s]
+  (let [s1b (g2d/polar-> o (g2d/polar d (- a h)))
+        s2b (g2d/polar-> o (g2d/polar d (+ a h)))
+        r1 (g2d/ray o s1b)
+        r2 (g2d/ray o s2b)
+        i1 (g2d/intersection r1 s)
+        i2 (g2d/intersection r2 s)]
+    (cond
+      (and (nil? i1) (nil? i2))
+       s
+     (not (or (nil? i1) (nil? i2)))
+       (g2d/segment (:p i1) (:p i2))
+     :else
+       nil
+    )))
+
 (defn- qualify-endpoint-geom
   [ep kind]
   (assoc ep :geom kind))
@@ -335,6 +353,7 @@
                   (map (partial trim-segment-by-circle (g2d/circle o dist)))
                   (remove nil?)
                   (remove (partial is-segment-outside-pie-piece? o *alpha* *apperture*))
+                  (map (partial trim-segment-by-angle o dist *alpha* *apperture*))
                   (remove nil?))
         eps (build-endpoint-list segs)]
 

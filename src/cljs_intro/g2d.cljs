@@ -39,6 +39,17 @@
   ([o, p]
    (->polar (minus p o))))
 
+(def O (vec2d 0 0))
+
+(defn polar->
+  ([p]
+   (polar-> O p))
+
+  ([o {r :r theta :theta}]
+   (-> (vec2d (Math/cos theta) (Math/sin theta))
+       (scale r)
+       (plus o))))
+
 (defn rotate ;; TODO : pourri
   [[x y] a]
   (let [c (Math/cos a)
@@ -179,7 +190,6 @@
           )))))
 
 ;; -----
-
 
 (defn remap-angle
   "Remap any angle returned by function atan2 in range [0, 2*PI]"
