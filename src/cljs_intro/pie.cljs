@@ -57,8 +57,8 @@
   "Return true if segment s is totally inside the piece of pie defined by
    center o, direction angle alpha, and half apperture angle h."
   [o alpha h {a :a b :b :as s}]
-  (let [h+  (remap-angle h)
-        h-  (remap-angle (- h))
+  (let [h+ (remap-angle h)
+        h- (remap-angle (- h))
         ra (-> (g2d/->polar o a) (:theta) (remap-angle) (- alpha) (remap-angle))
         rb (-> (g2d/->polar o b) (:theta) (remap-angle) (- alpha) (remap-angle))]
      (and (or (> ra h-) (< ra h+))
@@ -79,19 +79,74 @@
         ))))
 
 (defn- trim-segment-by-angle
-  ""
-  [o d a h s]
-  (let [s1b (g2d/polar-> o (g2d/polar d (- a h)))
-        s2b (g2d/polar-> o (g2d/polar d (+ a h)))
-        r1 (g2d/ray o s1b)
-        r2 (g2d/ray o s2b)
-        i1 (g2d/intersection r1 s)
-        i2 (g2d/intersection r2 s)]
+  "*WARN* segment should *NOT* be totally out-of-sight !"
+  [o d alpha h {a :a b :b :as s}]
+  (let [h+    (remap-angle h)
+        h-    (remap-angle (- h))
+        ra    (-> (g2d/->polar o a) (:theta) (remap-angle) (- alpha) (remap-angle))
+        rb    (-> (g2d/->polar o b) (:theta) (remap-angle) (- alpha) (remap-angle))
+        minab (Math/min ra rb)
+        maxab (Math/max ra rb)
+        dtad  (- maxab minab)
+        p-    (if (== maxab ra) a b)
+        p+    (if (== minab ra) a b)]
+
     (cond
-      (and (nil? i1) (nil? i2))
+     ;; Segment is fully visible
+     ;; (Translate both angles by -h, then remap and check resulting angles both lie in [2PI-2h, 2PI])
+     ;;
+     (and (is-in-range? (remap-angle (- minab h)) (- (* 2 Math/PI) (* 2 h)) (* 2 Math/PI))
+          (is-in-range? (remap-angle (- maxab h)) (- (* 2 Math/PI) (* 2 h)) (* 2 Math/PI)))
        s
-     (not (or (nil? i1) (nil? i2)))
-       (g2d/segment (:p i1) (:p i2))
+
+     ;; First end lies under h+
+     ;;
+     (< minab h+)
+       (if (< dtad Math/PI)
+         ;; Segment crosses upper bound
+         ;;
+         (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
+               r  (g2d/ray o sb)
+               i  (g2d/intersection r s)]
+           (g2d/segment p+ (:p i)))
+
+         ;; Segment crosses lower bound
+         ;;
+         (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
+               r  (g2d/ray o sb)
+               i  (g2d/intersection r s)]
+           (g2d/segment (:p i) p+))
+         )
+
+     ;; Last end lies above h-
+     (> maxab h-)
+       (if (< dtad Math/PI)
+         ;; Segment crosses lower bound
+         ;;
+         (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
+               r  (g2d/ray o sb)
+               i  (g2d/intersection r s)]
+           (g2d/segment p- (:p i)))
+
+         ;; Segment crosses upper bound
+         ;;
+         (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
+               r  (g2d/ray o sb)
+               i  (g2d/intersection r s)]
+           (g2d/segment (:p i) p-))
+         )
+
+     ;; Segment crosses both bounds
+     ;;
+     (and (> minab h+) (< maxab h-))
+       (let [s1b (g2d/polar-> o (g2d/polar d (+ alpha h)))
+             r1  (g2d/ray o s1b)
+             i1  (g2d/intersection r1 s)
+             s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
+             r2 (g2d/ray o s2b)
+             i2 (g2d/intersection r2 s)]
+         (g2d/segment (:p i1) (:p i2)))
+
      :else
        nil
     )))
@@ -339,7 +394,7 @@
     )
   )
 
-(def *alpha* (g2d/deg->rad 100))
+(def *alpha* (g2d/deg->rad 137))
 (def *apperture* (g2d/deg->rad 30.0))
 
 (defn compute-visibility-hull

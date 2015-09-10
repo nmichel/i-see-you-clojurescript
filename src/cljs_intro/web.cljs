@@ -86,7 +86,7 @@
   )
 
 
-(def *alpha* (g2d/deg->rad 100))
+(def *alpha* (g2d/deg->rad 137))
 (def *apperture* (g2d/deg->rad 30.0))
 
 (defn- render-game
