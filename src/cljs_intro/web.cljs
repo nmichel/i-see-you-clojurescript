@@ -16,10 +16,10 @@
 ;;(def geom (data/produce-dev-data-4))
 ;;(def geom (data/produce-parallel-vertical-segments-soup))
 ;;(def geom (data/produce-parallel-horizontal-segments-soup))
-(def geom (data/produce-square-soup 12 6 25 20 25))
+;;(def geom (data/produce-square-soup 12 6 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 100 20 20))
-;;(def geom (data/produce-block-soup))
+(def geom (data/produce-block-soup))
 
 (defn- build-dynamic-data
   []
@@ -86,8 +86,8 @@
   )
 
 
-(def *alpha* (g2d/deg->rad 137))
-(def *apperture* (g2d/deg->rad 30.0))
+(def *alpha* (g2d/deg->rad 0))
+(def *apperture* (g2d/deg->rad 170.0))
 
 (defn- render-game
   [{:keys [img width height segs hull x y context eps dynamic dist] :as state}]
@@ -97,7 +97,7 @@
     (draw/draw-rect context 0 0 width height erase-color)
     ;;(draw/draw-geometry context drawdata)
     (draw/draw-segments context segs)
-    (draw/draw-hull-as-surfaces context hull)
+    ;;(draw/draw-hull-as-surfaces context hull)
     (draw/draw-pie context x y dist (-> (- *alpha* *apperture*) (g2d/remap-angle)) (-> (+ *alpha* *apperture*) (g2d/remap-angle))) ;; work only with pie/compute-visibility-hull output
     ;;(draw/draw-hull-as-polygon context x y hull) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-as-fan context x y hull img) ;; work only with global/compute-visibility-hull output

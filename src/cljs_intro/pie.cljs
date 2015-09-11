@@ -78,7 +78,105 @@
         (assoc s :a ta :b tb :ma ma :mb mb)
         ))))
 
+(declare trim-segment-by-angle-narrow)
+(declare trim-segment-by-angle-wide)
 (defn- trim-segment-by-angle
+  "*WARN* segment should *NOT* be totally out-of-sight !"
+  [o d alpha h s]
+  (if (< h (* Math/PI 0.5))
+    (trim-segment-by-angle-narrow o d alpha h s)
+    (trim-segment-by-angle-wide o d alpha h s)))
+
+(defn- trim-segment-by-angle-wide
+  "*WARN* segment should *NOT* be totally out-of-sight !"
+  [o d alpha h {a :a b :b :as s}]
+  (let [h+    (remap-angle h)
+        h-    (remap-angle (- h))
+        ra    (-> (g2d/->polar o a) (:theta) (remap-angle) (- alpha) (remap-angle))
+        rb    (-> (g2d/->polar o b) (:theta) (remap-angle) (- alpha) (remap-angle))
+        minab (Math/min ra rb)
+        maxab (Math/max ra rb)
+        dtad  (- maxab minab)
+        p-    (if (== maxab ra) a b)
+        p+    (if (== minab ra) a b)
+
+        sh+   (- h+ minab)
+        sh-   (- h- minab)
+        ]
+
+    (if (<= sh- 0)
+      [s]
+      (if (<= sh+ 0)
+        (if (< dtad sh-)
+          [nil]
+          (if (< dtad Math/PI)
+            ;; Segment crosses lower bound
+            ;;
+            (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
+                  r  (g2d/ray o sb)
+                  i  (g2d/intersection r s)]
+              [(g2d/segment (:p i) p-)])
+
+            ;; Segment crosses upper bound
+            ;;
+            (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
+                  r  (g2d/ray o sb)
+                  i  (g2d/intersection r s)]
+              [(g2d/segment (:p i) p-)])
+            )
+          )
+
+        (if (<= dtad sh+)
+          [s]
+          (if (< dtad Math/PI)
+            (if (< dtad sh-)
+              ;; Segment crosses upper bound
+              ;;
+              (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
+                    r  (g2d/ray o sb)
+                    i  (g2d/intersection r s)]
+                [(g2d/segment (:p i) p+)])
+
+
+              (let [s1b (g2d/polar-> o (g2d/polar d (+ alpha h)))
+                    r1  (g2d/ray o s1b)
+                    i1  (g2d/intersection r1 s)
+                    s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
+                    r2 (g2d/ray o s2b)
+                    i2 (g2d/intersection r2 s)]
+                [(g2d/segment (:p i1) p+), (g2d/segment (:p i2) p-)]
+                )
+
+              (if (< dtad sh-)
+                ;; Segment crosses lower bound
+                ;;
+                (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
+                      r  (g2d/ray o sb)
+                      i  (g2d/intersection r s)]
+                  [(g2d/segment (:p i) p+)])
+
+                [s]
+                )
+              )
+
+            (if (< dtad sh-)
+              ;; Segment crosses lower bound
+              ;;
+              (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
+                    r  (g2d/ray o sb)
+                    i  (g2d/intersection r s)]
+                [(g2d/segment (:p i) p+)])
+
+              [s]
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+
+(defn- trim-segment-by-angle-narrow
   "*WARN* segment should *NOT* be totally out-of-sight !"
   [o d alpha h {a :a b :b :as s}]
   (let [h+    (remap-angle h)
@@ -97,7 +195,7 @@
      ;;
      (and (is-in-range? (remap-angle (- minab h)) (- (* 2 Math/PI) (* 2 h)) (* 2 Math/PI))
           (is-in-range? (remap-angle (- maxab h)) (- (* 2 Math/PI) (* 2 h)) (* 2 Math/PI)))
-       s
+       [s]
 
      ;; First end lies under h+
      ;;
@@ -108,14 +206,14 @@
          (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
                r  (g2d/ray o sb)
                i  (g2d/intersection r s)]
-           (g2d/segment p+ (:p i)))
+           [(g2d/segment p+ (:p i))])
 
          ;; Segment crosses lower bound
          ;;
          (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
                r  (g2d/ray o sb)
                i  (g2d/intersection r s)]
-           (g2d/segment (:p i) p+))
+           [(g2d/segment (:p i) p+)])
          )
 
      ;; Last end lies above h-
@@ -126,14 +224,14 @@
          (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
                r  (g2d/ray o sb)
                i  (g2d/intersection r s)]
-           (g2d/segment p- (:p i)))
+           [(g2d/segment p- (:p i))])
 
          ;; Segment crosses upper bound
          ;;
          (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
                r  (g2d/ray o sb)
                i  (g2d/intersection r s)]
-           (g2d/segment (:p i) p-))
+           [(g2d/segment (:p i) p-)])
          )
 
      ;; Segment crosses both bounds
@@ -145,10 +243,7 @@
              s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
              r2 (g2d/ray o s2b)
              i2 (g2d/intersection r2 s)]
-         (g2d/segment (:p i1) (:p i2)))
-
-     :else
-       nil
+         [(g2d/segment (:p i1) (:p i2))])
     )))
 
 (defn- qualify-endpoint-geom
@@ -394,8 +489,8 @@
     )
   )
 
-(def *alpha* (g2d/deg->rad 137))
-(def *apperture* (g2d/deg->rad 30.0))
+(def *alpha* (g2d/deg->rad 0))
+(def *apperture* (g2d/deg->rad 170.0))
 
 (defn compute-visibility-hull
   "Given a position, visibility radius and a set of segments, compute
@@ -408,7 +503,7 @@
                   (map (partial trim-segment-by-circle (g2d/circle o dist)))
                   (remove nil?)
                   (remove (partial is-segment-outside-pie-piece? o *alpha* *apperture*))
-                  (map (partial trim-segment-by-angle o dist *alpha* *apperture*))
+                  (mapcat (partial trim-segment-by-angle o dist *alpha* *apperture*))
                   (remove nil?))
         eps (build-endpoint-list segs)]
 
