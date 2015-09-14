@@ -2,6 +2,7 @@
   (:require [cljs-intro.core :as core]
             [cljs-intro.global :as global]
             [cljs-intro.pie :as pie]
+            ;;[cljs-intro.spot :as spot]
             [cljs-intro.g2d :as g2d]
             [cljs-intro.draw :as draw]
             [cljs-intro.data :as data]

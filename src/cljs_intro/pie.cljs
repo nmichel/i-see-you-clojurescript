@@ -222,6 +222,15 @@
     )
   )
 
+(defn- rebase-angle-sorted-endpoints
+  [alpha eps-by-angle]
+  (map (fn [[angle eps]]
+    [(-> (- angle alpha) g2d/->-pi+pi) eps])  eps-by-angle))
+
+(defn- sort-angle-sorted-endpoints
+  [eps-by-angle]
+  (sort (fn [[a _] [b _]] (<= a b)) eps-by-angle))
+
 (defn- compute-far-point
   [{o :o p :p} d]
   (let [po (g2d/minus p o)
@@ -363,10 +372,24 @@
   "
 
   [alpha apperture o dist segs eps-by-angle]
-  (mapcat (fn [[angle eps]]
-            (cond (= 1 (count eps)) (process-one-endpoint o dist segs (first eps))
-                  :else             (process-many-endpoint o dist segs eps)))
-          eps-by-angle)
+  (concat
+   ;; If necessary produce a first vertex
+   ;;
+   (let [angle (g2d/->-pi+pi (- alpha apperture))
+         sb    (g2d/polar-> o (g2d/polar dist angle))
+         r     (g2d/ray o sb)]
+     [(-> (compute-far-point r dist) (:p) (g2d/endpoint []) (qualify-endpoint-geom :farpoint) (core/qualify-endpoint-angle angle))])
+
+   (mapcat (fn [[angle eps]]
+             (cond (= 1 (count eps)) (process-one-endpoint o dist segs (first eps))
+                   :else             (process-many-endpoint o dist segs eps)))
+           eps-by-angle)
+
+   (let [angle (g2d/->-pi+pi (+ alpha apperture))
+         sb    (g2d/polar-> o (g2d/polar dist angle))
+         r     (g2d/ray o sb)]
+     [(-> (compute-far-point r dist) (:p) (g2d/endpoint []) (qualify-endpoint-geom :farpoint) (core/qualify-endpoint-angle angle))])
+   )
   )
 
 (defn- compute-hull-surfaces
@@ -383,7 +406,7 @@
   [o dist eps]
   (if (empty? eps)
     []
-    (let [pts (drop-while (fn [{role :role}] (= role :collision)) (cycle eps))] ;; Start from a non collision point (as they will be dropped)
+    (let [pts (drop-while (fn [{role :role}] (= role :collision)) eps)] ;; Start from a non collision point (as they will be dropped)
       (->
        (reduce (fn [[acc {a :point angle_a :angle geom_a :geom role_a :role :as epa}]
                     {b :point angle_b :angle geom_b :geom role_b :role :as epb}]
@@ -440,6 +463,8 @@
      (core/sort-endpoints-by-angle o eps)
      (core/group-endpoints-by-angle)
      (merge-angle-sorted-endpoints)
+     ;;(rebase-angle-sorted-endpoints alpha)
+     ;;(sort-angle-sorted-endpoints)
      (compute-hull-vertices alpha apperture o dist segs)
      (compute-hull-surfaces o dist)
      (conj [segs]))
