@@ -1,6 +1,6 @@
 (ns cljs-intro.pie
   (:require [cljs-intro.core :as core]
-            [cljs-intro.g2d :as g2d :refer [remap-angle]]))
+            [cljs-intro.g2d :as g2d :refer [-pi+pi->0+2pi]]))
 
 (defn- is-in-range?
   [a p q]
@@ -19,51 +19,37 @@
   "Return true if segment s is totally out of the piece of pie defined by
    center o, direction angle alpha, and half apperture angle h."
   [o alpha h {a :a b :b :as s}]
-  (let [PI   Math/PI
-        PI2  (* PI 0.5)
-        PI32 (/ (* PI 3) 2)
-        h+   (remap-angle h)
-        h-   (remap-angle (- h))
-        ra   (-> (g2d/->polar o a) (:theta) (- alpha) (remap-angle))
-        rb   (-> (g2d/->polar o b) (:theta) (- alpha) (remap-angle))]
+  (let [h+    (* 2 h)
+        ra    (-> (g2d/->polar o a) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        rb    (-> (g2d/->polar o b) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        minab (Math/min ra rb)
+        maxab (Math/max ra rb)]
+
+    ;; ra and rb are angular position of segment both ends, expressed in a base where
+    ;; the angle of vision lower bound is at angle 0.
+    ;; Therefore h+ is the upper angular bound of the angle of vision, in this coordinate system.
+    ;;
     (cond
-     ;; at least one in (a, b) lies in visible range [0, h+] U [h-, 2PI]
-     ;;
-     (or (is-in-range? ra 0 h+)
-         (is-in-range? ra h- (* 2 PI))
-         (is-in-range? rb 0 h+)
-         (is-in-range? rb h- (* 2 PI)))
+     (< minab h+)
+       ;; At leat on end lies in the visible range
+       ;;
        false
 
-     ;; Half apperture if greater than PI/2
-     ;; Therefore the segment can not be visible (otherwise at least one of its extremities
-     ;; would have been visible
-     ;;
-     (> h PI2)
+     (> h (* Math/PI 0.5))
+       ;; Half apperture if greater than PI/2
+       ;; Therefore the segment can not be visible, otherwise minab would have been in visible range
+       ;;
        true
 
-     ;; If half apperture is less than PI/2, the segment [ab] is out of sight if the angular distance
-     ;; between its extremities is lower than PI.
-     ;;
-     :else
-       (let [minab (Math/min ra rb)
-             maxab (Math/max ra rb)
-             dtad  (- maxab minab)]
-         (< dtad PI)
-         )
-     )))
 
-(defn- is-segment-inside-pie-piece?
-  "Return true if segment s is totally inside the piece of pie defined by
-   center o, direction angle alpha, and half apperture angle h."
-  [o alpha h {a :a b :b :as s}]
-  (let [h+ (remap-angle h)
-        h- (remap-angle (- h))
-        ra (-> (g2d/->polar o a) (:theta) (remap-angle) (- alpha) (remap-angle))
-        rb (-> (g2d/->polar o b) (:theta) (remap-angle) (- alpha) (remap-angle))]
-     (and (or (> ra h-) (< ra h+))
-          (or (> rb h-) (< rb h+)))
-    ))
+     :else
+       ;; Full apperture is less than PI.
+       ;; Therefore, if the second point (at maxab angular position)  is
+       ;; after (minab + PI), it lies in the same half-plae than h+ and h-, and
+       ;; crosses them both.
+       ;;
+       (<= maxab (+ minab Math/PI))
+     )))
 
 (defn- trim-segment-by-circle
   "Trim segment s with respect to circle c.
@@ -88,163 +74,108 @@
     (trim-segment-by-angle-wide o d alpha h s)))
 
 (defn- trim-segment-by-angle-wide
-  "*WARN* segment should *NOT* be totally out-of-sight !"
+  "TODO"
   [o d alpha h {a :a b :b :as s}]
-  (let [h+    (remap-angle h)
-        h-    (remap-angle (- h))
-        ra    (-> (g2d/->polar o a) (:theta) (remap-angle) (- alpha) (remap-angle))
-        rb    (-> (g2d/->polar o b) (:theta) (remap-angle) (- alpha) (remap-angle))
+  (let [h+    (* 2 h)
+        ra    (-> (g2d/->polar o a) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        rb    (-> (g2d/->polar o b) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
         minab (Math/min ra rb)
         maxab (Math/max ra rb)
-        dtad  (- maxab minab)
-        p-    (if (== maxab ra) a b)
-        p+    (if (== minab ra) a b)
+        p     (if (== minab ra) a b)
+        q     (if (== maxab ra) a b)]
+    (if (>= minab h+)
+      ;; The smallest angle is after h+, therefore the whole segment is out of sight
+      ;;
+      [nil]
 
-        sh+   (- h+ minab)
-        sh-   (- h- minab)
-        ]
-
-    (if (<= sh- 0)
-      [s]
-      (if (<= sh+ 0)
-        (if (< dtad sh-)
-          [nil]
-          (if (< dtad Math/PI)
-            ;; Segment crosses lower bound
-            ;;
-            (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
-                  r  (g2d/ray o sb)
-                  i  (g2d/intersection r s)]
-              [(g2d/segment (:p i) p-)])
-
-            ;; Segment crosses upper bound
-            ;;
-            (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
-                  r  (g2d/ray o sb)
-                  i  (g2d/intersection r s)]
-              [(g2d/segment (:p i) p-)])
-            )
-          )
-
-        (if (<= dtad sh+)
+      ;; The smallest angle is before h+, lets look at the other angle position, relatively to h+ and (minab + PI)
+      ;;
+      (if (< maxab h+)
+        ;; The other point is inside angle of sight
+        ;;
+        (if (< maxab (+ minab Math/PI))
+          ;; The other point is before (minab + PI), therefore the segment is fully visible
+          ;;
           [s]
-          (if (< dtad Math/PI)
-            (if (< dtad sh-)
-              ;; Segment crosses upper bound
-              ;;
-              (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
-                    r  (g2d/ray o sb)
-                    i  (g2d/intersection r s)]
-                [(g2d/segment (:p i) p+)])
 
-
-              (let [s1b (g2d/polar-> o (g2d/polar d (+ alpha h)))
-                    r1  (g2d/ray o s1b)
-                    i1  (g2d/intersection r1 s)
-                    s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
-                    r2 (g2d/ray o s2b)
-                    i2 (g2d/intersection r2 s)]
-                [(g2d/segment (:p i1) p+), (g2d/segment (:p i2) p-)]
-                )
-
-              (if (< dtad sh-)
-                ;; Segment crosses lower bound
-                ;;
-                (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
-                      r  (g2d/ray o sb)
-                      i  (g2d/intersection r s)]
-                  [(g2d/segment (:p i) p+)])
-
-                [s]
-                )
-              )
-
-            (if (< dtad sh-)
-              ;; Segment crosses lower bound
-              ;;
-              (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
-                    r  (g2d/ray o sb)
-                    i  (g2d/intersection r s)]
-                [(g2d/segment (:p i) p+)])
-
-              [s]
-              )
-            )
+          ;; The other point is after  (minab + PI), therefore the segment crosses both bounds of angle of sight
+          ;;
+          (let [s1b (g2d/polar-> o (g2d/polar d (+ alpha h)))
+                r1  (g2d/ray o s1b)
+                i1  (g2d/intersection r1 s)
+                s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
+                r2 (g2d/ray o s2b)
+                i2 (g2d/intersection r2 s)]
+            [(g2d/segment (:p i1) q), (g2d/segment (:p i2) p)])
           )
+
+        ;; The other point is outside angle of sight
+        ;;
+        (if (< maxab (+ minab Math/PI))
+          ;; Segment crosses upper bound
+          ;;
+          (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
+                r  (g2d/ray o sb)
+                i  (g2d/intersection r s)]
+            [(g2d/segment (:p i) p)])
+
+          ;; Segment crosses lower bound
+          ;;
+          (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
+                r  (g2d/ray o sb)
+                i  (g2d/intersection r s)]
+            [(g2d/segment (:p i) p)])
+         )
         )
       )
-    )
-  )
+    ))
 
 (defn- trim-segment-by-angle-narrow
-  "*WARN* segment should *NOT* be totally out-of-sight !"
+  "TODO"
   [o d alpha h {a :a b :b :as s}]
-  (let [h+    (remap-angle h)
-        h-    (remap-angle (- h))
-        ra    (-> (g2d/->polar o a) (:theta) (remap-angle) (- alpha) (remap-angle))
-        rb    (-> (g2d/->polar o b) (:theta) (remap-angle) (- alpha) (remap-angle))
+  (let [h+    (* 2 h)
+        ra    (-> (g2d/->polar o a) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        rb    (-> (g2d/->polar o b) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
         minab (Math/min ra rb)
         maxab (Math/max ra rb)
-        dtad  (- maxab minab)
-        p-    (if (== maxab ra) a b)
-        p+    (if (== minab ra) a b)]
+        p     (if (== minab ra) a b)
+        q     (if (== maxab ra) a b)]
+    (if (< minab h+)
+      (cond
+       (< maxab h+)
+         [s]
 
-    (cond
-     ;; Segment is fully visible
-     ;; (Translate both angles by -h, then remap and check resulting angles both lie in [2PI-2h, 2PI])
-     ;;
-     (and (is-in-range? (remap-angle (- minab h)) (- (* 2 Math/PI) (* 2 h)) (* 2 Math/PI))
-          (is-in-range? (remap-angle (- maxab h)) (- (* 2 Math/PI) (* 2 h)) (* 2 Math/PI)))
-       [s]
-
-     ;; First end lies under h+
-     ;;
-     (< minab h+)
-       (if (< dtad Math/PI)
+       (< maxab (+ minab Math/PI))
          ;; Segment crosses upper bound
          ;;
          (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
                r  (g2d/ray o sb)
                i  (g2d/intersection r s)]
-           [(g2d/segment p+ (:p i))])
+           [(g2d/segment p (:p i))])
 
+       :else
          ;; Segment crosses lower bound
          ;;
          (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
                r  (g2d/ray o sb)
                i  (g2d/intersection r s)]
-           [(g2d/segment (:p i) p+)])
-         )
+           [(g2d/segment (:p i) p)])
+       )
 
-     ;; Last end lies above h-
-     (> maxab h-)
-       (if (< dtad Math/PI)
-         ;; Segment crosses lower bound
-         ;;
-         (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
-               r  (g2d/ray o sb)
-               i  (g2d/intersection r s)]
-           [(g2d/segment p- (:p i))])
+      (if (<= maxab (+ minab Math/PI))
+        ;; Segment is fully invisible
+        [nil]
 
-         ;; Segment crosses upper bound
-         ;;
-         (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
-               r  (g2d/ray o sb)
-               i  (g2d/intersection r s)]
-           [(g2d/segment (:p i) p-)])
-         )
-
-     ;; Segment crosses both bounds
-     ;;
-     (and (> minab h+) (< maxab h-))
-       (let [s1b (g2d/polar-> o (g2d/polar d (+ alpha h)))
-             r1  (g2d/ray o s1b)
-             i1  (g2d/intersection r1 s)
-             s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
-             r2 (g2d/ray o s2b)
-             i2 (g2d/intersection r2 s)]
-         [(g2d/segment (:p i1) (:p i2))])
-    )))
+        ;; Segment crosses both bounds
+        ;;
+        (let [s1b (g2d/polar-> o (g2d/polar d (+ alpha h)))
+              r1  (g2d/ray o s1b)
+              i1  (g2d/intersection r1 s)
+              s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
+              r2 (g2d/ray o s2b)
+              i2 (g2d/intersection r2 s)]
+          [(g2d/segment (:p i1) (:p i2))])
+        ))))
 
 (defn- qualify-endpoint-geom
   [ep kind]
@@ -262,6 +193,7 @@
           segments))
 
 (defn- merge-sorted-endpoints
+  "When 2 endpoints are at the same position, then melt them, an reconstruct their bearing segments."
   [eps]
   (loop [acc []
          pts eps]

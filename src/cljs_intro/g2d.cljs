@@ -191,10 +191,28 @@
 
 ;; -----
 
-(defn remap-angle
-  "Remap any angle returned by function atan2 in range [0, 2*PI]"
+(defn ->-pi+pi
+  "Map any angle initially in [-pi, pi], possibly translated by a value in [-pi, +pi] into [-pi, pi[."
   [x]
-  (if (> x 0) x (+ x (* 2 Math/PI))))
+  (cond
+   (< x (- Math/PI)) (+ x (* 2 Math/PI))
+   (< x Math/PI)     x
+   :else             (- x (* 2 Math/PI))
+   ))
+
+(defn -pi+pi->0+2pi
+  "Map any angle in [-pi, pi] into [0, 2pi[."
+  [x]
+  (if (>= x 0) x (+ x (* 2 Math/PI))))
+
+(defn ->0+2pi
+  "Map any angle initially in [0, 2pi[, possibly translated by a value in [-pi, +pi] into [0, 2pi[."
+  [x]
+  (cond
+   (< x 0)             (+ x (* 2 Math/PI))
+   (< x (* 2 Math/PI)) x
+   :else               (- x (* 2 Math/PI))
+   ))
 
 (defn deg->rad [d] (-> d (* Math/PI) (/ 180.0)))
 (defn rad->deg [r] (-> r (* 180.0) (/ Math/PI)))
