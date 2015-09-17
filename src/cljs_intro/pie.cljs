@@ -362,7 +362,7 @@
   (ep0 ep1 ... epn)
   "
 
-  [o dist segs eps-by-angle]
+  [alpha apperture o dist segs eps-by-angle]
   (mapcat (fn [[angle eps]]
             (cond (= 1 (count eps)) (process-one-endpoint o dist segs (first eps))
                   :else             (process-many-endpoint o dist segs eps)))
@@ -421,21 +421,18 @@
     )
   )
 
-(def *alpha* (g2d/deg->rad 0))
-(def *apperture* (g2d/deg->rad 170.0))
-
 (defn compute-visibility-hull
   "Given a position, visibility radius and a set of segments, compute
   the sequences of surface defining the visibility hull
   "
-  [o dist segments]
+  [alpha apperture o dist segments]
   (let [segs (->> segments
-                  (remove (partial is-segment-outside-pie-piece? o *alpha* *apperture*))
+                  (remove (partial is-segment-outside-pie-piece? o alpha apperture))
                   (filter (partial is-segment-near-point? o dist))
                   (map (partial trim-segment-by-circle (g2d/circle o dist)))
                   (remove nil?)
-                  (remove (partial is-segment-outside-pie-piece? o *alpha* *apperture*))
-                  (mapcat (partial trim-segment-by-angle o dist *alpha* *apperture*))
+                  (remove (partial is-segment-outside-pie-piece? o alpha apperture))
+                  (mapcat (partial trim-segment-by-angle o dist alpha apperture))
                   (remove nil?))
         eps (build-endpoint-list segs)]
 
@@ -443,7 +440,7 @@
      (core/sort-endpoints-by-angle o eps)
      (core/group-endpoints-by-angle)
      (merge-angle-sorted-endpoints)
-     (compute-hull-vertices o dist segs)
+     (compute-hull-vertices alpha apperture o dist segs)
      (compute-hull-surfaces o dist)
      (conj [segs]))
     ))

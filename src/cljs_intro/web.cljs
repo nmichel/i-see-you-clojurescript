@@ -86,8 +86,8 @@
   )
 
 
-(def *alpha* (g2d/deg->rad 0))
-(def *apperture* (g2d/deg->rad 170.0))
+(def *alpha* (g2d/deg->rad -127))
+(def *apperture* (g2d/deg->rad 160.0))
 
 (defn- render-game
   [{:keys [img width height segs hull x y context eps dynamic dist] :as state}]
@@ -98,7 +98,7 @@
     ;;(draw/draw-geometry context drawdata)
     (draw/draw-segments context segs)
     ;;(draw/draw-hull-as-surfaces context hull)
-    (draw/draw-pie context x y dist (-> (- *alpha* *apperture*) (g2d/remap-angle)) (-> (+ *alpha* *apperture*) (g2d/remap-angle))) ;; work only with pie/compute-visibility-hull output
+    (draw/draw-pie context x y dist (-> (- *alpha* *apperture*) (g2d/-pi+pi->0+2pi)) (-> (+ *alpha* *apperture*) (g2d/-pi+pi->0+2pi))) ;; work only with pie/compute-visibility-hull output
     ;;(draw/draw-hull-as-polygon context x y hull) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-as-fan context x y hull img) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-by-clipping context x y hull img) ;; work only with global/compute-visibility-hull output
@@ -136,7 +136,7 @@
   (let [o           (g2d/vec2d x y)
         alpha       (:alpha state)
         [dd de ds]  static ;; [dd de ds] (build-data static r-geom alpha)
-        [segs hull] (pie/compute-visibility-hull o dist ds)
+        [segs hull] (pie/compute-visibility-hull *alpha* *apperture* o dist ds)
         ;;[segs hull] (spot/compute-visibility-hull o dist ds)
         ;;hull       (global/compute-visibility-hull o de ds)
         new-state   (assoc state
