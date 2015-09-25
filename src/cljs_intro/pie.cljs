@@ -244,25 +244,29 @@
   )
 
 (defn- process-one-endpoint
-  [o dist segments {:keys [point angle] :as ep}]
+  [o dist segments {:keys [point angle geom] :as ep}]
   (let [ray          (g2d/ray o point)
         tested-segs  (core/compute-non-bearing-segments-list [ep] segments)
         [c :as cols] (core/compute-ray-segments-intersections ray tested-segs) ; c is nil when (empty? cols) is true
         classif      (core/classify-endpoint ray ep)]
-    (if (and (not (nil? c)) (< (:f c) 1))
-      [(->
-        (g2d/endpoint (:p c) [])
-        (qualify-endpoint-geom :collision)
-        (qualify-endpoint-role :collision)
-        (core/qualify-endpoint-angle angle))]
-      (let [col (if (empty? cols)
-                  (-> (compute-far-point ray dist) (:p) (g2d/endpoint []) (qualify-endpoint-geom :farpoint) (core/qualify-endpoint-angle angle))
-                  (-> c                            (:p) (g2d/endpoint []) (qualify-endpoint-geom :collision) (core/qualify-endpoint-angle angle)))]
-        (cond
-         (= classif :cross) [(qualify-endpoint-role ep :cross)]
-         (= classif :in)    [(-> (qualify-endpoint-role col :out) (core/qualify-endpoint-angle angle)) (qualify-endpoint-role ep :in)]
-         (= classif :out)   [(qualify-endpoint-role ep :out) (-> (qualify-endpoint-role col :in) (core/qualify-endpoint-angle angle))]
-         )
+    (if (and (nil? c) (= geom :inter))
+      [(qualify-endpoint-role ep classif)]
+
+      (if (and (not (nil? c)) (< (:f c) 1))
+        [(->
+          (g2d/endpoint (:p c) [])
+          (qualify-endpoint-geom :collision)
+          (qualify-endpoint-role :collision)
+          (core/qualify-endpoint-angle angle))]
+        (let [col (if (empty? cols)
+                    (-> (compute-far-point ray dist) (:p) (g2d/endpoint []) (qualify-endpoint-geom :farpoint) (core/qualify-endpoint-angle angle))
+                    (-> c                            (:p) (g2d/endpoint []) (qualify-endpoint-geom :collision) (core/qualify-endpoint-angle angle)))]
+          (cond
+           (= classif :cross) [(qualify-endpoint-role ep :cross)]
+           (= classif :in)    [(-> (qualify-endpoint-role col :out) (core/qualify-endpoint-angle angle)) (qualify-endpoint-role ep :in)]
+           (= classif :out)   [(qualify-endpoint-role ep :out) (-> (qualify-endpoint-role col :in) (core/qualify-endpoint-angle angle))]
+           )
+          )
         )
       )
     )
