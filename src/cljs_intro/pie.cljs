@@ -2,10 +2,6 @@
   (:require [cljs-intro.core :as core]
             [cljs-intro.g2d :as g2d :refer [-pi+pi->0+2pi]]))
 
-(defn- is-in-range?
-  [a p q]
-  (<= p a q))
-
 (defn- is-segment-near-point?
   "Select segments for which absolute distance to m is lower than or equal to d"
 
@@ -223,9 +219,9 @@
   )
 
 (defn- rebase-angle-sorted-endpoints
-  [alpha eps-by-angle]
+  [alpha apperture eps-by-angle]
   (map (fn [[angle eps]]
-    [(-> (- angle alpha) g2d/->-pi+pi) eps])  eps-by-angle))
+    [(-> (-pi+pi->0+2pi angle) (- (-pi+pi->0+2pi alpha)) (g2d/->0+2pi) (+ apperture) (g2d/->0+2pi) (+ 0.000001) (g2d/->0+2pi)) eps])  eps-by-angle))
 
 (defn- sort-angle-sorted-endpoints
   [eps-by-angle]
@@ -363,7 +359,7 @@
 
   For a given angle, endpoints are sorted by increasing distance from the origin.
 
-  Output endpoints are decorated with :role qualifier.
+  Output endpoints are decorated with :role and :geom qualifiers.
 
   Input:
   ((a0 (ep00 ep01 ... ep0n))
@@ -384,7 +380,7 @@
          r     (g2d/ray o sb)]
      [(-> (compute-far-point r dist) (:p) (g2d/endpoint []) (qualify-endpoint-geom :farpoint) (core/qualify-endpoint-angle angle))])
 
-   (mapcat (fn [[angle eps]]
+   (mapcat (fn [[_ eps]]
              (cond (= 1 (count eps)) (process-one-endpoint o dist segs (first eps))
                    :else             (process-many-endpoint o dist segs eps)))
            eps-by-angle)
@@ -467,8 +463,8 @@
      (core/sort-endpoints-by-angle o eps)
      (core/group-endpoints-by-angle)
      (merge-angle-sorted-endpoints)
-     ;;(rebase-angle-sorted-endpoints alpha)
-     ;;(sort-angle-sorted-endpoints)
+     (rebase-angle-sorted-endpoints alpha apperture)
+     (sort-angle-sorted-endpoints)
      (compute-hull-vertices alpha apperture o dist segs)
      (compute-hull-surfaces o dist)
      (conj [segs]))

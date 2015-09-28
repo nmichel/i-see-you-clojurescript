@@ -16,16 +16,15 @@
              :http-server-root "public" ;; this will be in resources/
              :server-port 3449          ;; default
              :server-ip   "192.168.232.129"     ;; default
+             :load-warninged-code true
              }
-  
+
   :cljsbuild {
     :builds [{:id "cljs-intro"
               :source-paths ["src"]
-              :figwheel {
-                         :websocket-host "192.168.232.129"}
-              
-              :compiler {
-                :output-to "cljs_intro.js"
-                :output-dir "out"
-                :optimizations :none
-                :source-map true}}]})
+              :figwheel {:websocket-host "192.168.232.129" }
+
+              :compiler {:output-to "cljs_intro.js"
+                         :output-dir "out"
+                         :optimizations :none
+                         :source-map true}}]})
