@@ -76,6 +76,10 @@
   [ep angle]
   (assoc ep :angle angle))
 
+(defn- quite-same
+  [e a b]
+  (-> (- a b) (Math/abs) (< e)))
+
 (defn sort-endpoints-by-angle
   "Sort endpoints by increasing polar angle. If some endpoints lie on the same angle, they are
    sorted by increasing distance to origin.
@@ -91,20 +95,23 @@
    (persistent!)
    (sort (comp (fn [[{ra :r ta :theta} epa] [{rb :r tb :theta}  epb]]
                  (cond
-                  (== ta tb) (<= ra rb)
+                  (quite-same 0.000001 ta tb) (<= ra rb)
                   (<= ta tb) true
                   :else false)
                  )))))
 
-(defn group-endpoints-by-angle [[[first-polar first-ep] & tail]]
-  "
-  [[angle [ep ...]] [angle [ep ...]]]
-  "
+(defn group-endpoints-by-angle
+  " Group endpoints by \"quite same\" angle.
+
+  i: ([a1 ep] [a2 ep] ... [an ep])
+  o: ([a1 [ep ...]] [a2 [ep ...]] [an [ep ...]])"
+  [[[first-polar first-ep] & tail]]
   (->>
-   (reduce (fn [[out [current-angle eps-vec :as acc]] [next-polar next-ep]]
+   (reduce (fn [[out [current-angle eps-vec :as acc]]
+                [next-polar next-ep]]
              (cond
-              (= current-angle (:theta next-polar)) [out [current-angle (conj eps-vec next-ep)]]     ;; same angle, add ep to acc
-              :else                                 [(conj out acc) [(:theta next-polar) [next-ep]]] ;; add acc to out, new acc from current ep
+              (quite-same 0.000001 current-angle (:theta next-polar)) [out [current-angle (conj eps-vec next-ep)]]    ;; same angle, add ep to acc
+              :else                                                   [(conj out acc) [(:theta next-polar) [next-ep]]] ;; add acc to out, new acc from current ep
               )
              )
            [[]                                 ;; res empty at start
@@ -112,7 +119,8 @@
            tail)
    ((fn [[out acc]]
       (conj out acc) ;; Merge last angle/endpoints into final result
-      ))))
+      )))
+  )
 
 (defn compute-ray-segments-intersections
   [ray segments]

@@ -1,6 +1,7 @@
 (ns cljs-intro.web
   (:require [cljs-intro.core :as core]
             [cljs-intro.global :as global]
+            [cljs-intro.pie :as pie]
             [cljs-intro.spot :as spot]
             [cljs-intro.g2d :as g2d]
             [cljs-intro.draw :as draw]
@@ -19,7 +20,11 @@
 ;;(def geom (data/produce-square-soup 12 6 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 100 20 20))
-(def geom (data/produce-block-soup))
+;;(def geom (data/produce-block-soup))
+;;(def geom (data/produce-oriented-segments-soup))
+;;(def geom (data/produce-polygon 320 180 170 10 0 false))
+;;(def geom (data/produce-nested-polygons 320 180 170 5))
+(def geom (data/produce-spiral 320 180 170 0))
 
 (defn- build-dynamic-data
   []
@@ -69,8 +74,6 @@
         height   (.-height target)
         r-geom   (build-dynamic-data)]
 
-    ;;(set! (.-src img) "http://upload.wikimedia.org/wikipedia/commons/e/ea/Selwyn_College_Old_Court%2C_Cambridge%2C_UK_-_Diliff.jpg")
-
     {:target  target
      :context context
      :img     img
@@ -87,19 +90,25 @@
     )
   )
 
+
+(def *alpha* (g2d/deg->rad 127))
+(def *apperture* (g2d/deg->rad 137.0))
+
 (defn- render-game
   [{:keys [img width height segs hull x y context eps dynamic dist] :as state}]
   (let [[drawdata eps _allsegs] dynamic
         o                       (g2d/vec2d x y)
         erase-color             "grey"]
     (draw/draw-rect context 0 0 width height erase-color)
-    ;;(draw/draw-geometry context drawdata)
+    (draw/draw-geometry context drawdata)
+    (draw/draw-segments context segs)
     (draw/draw-hull-as-surfaces context hull)
+    (draw/draw-pie context x y dist (-> (- *alpha* *apperture*) (g2d/-pi+pi->0+2pi)) (-> (+ *alpha* *apperture*) (g2d/-pi+pi->0+2pi))) ;; work only with pie/compute-visibility-hull output
+    ;;(draw/draw-circle context x y dist) ;; work only with spot/compute-visibility-hull output
     ;;(draw/draw-hull-as-polygon context x y hull) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-as-fan context x y hull img) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-by-clipping context x y hull img) ;; work only with global/compute-visibility-hull output
     ;;(draw/draw-hull-vertices context hull) ;; work only with global/compute-visibility-hull output
-    (draw/draw-segments context segs)
     ;;(draw/draw-endpoints context eps)
     (draw/draw-point context o "lightblue")
     ))
@@ -118,7 +127,8 @@
 
 (defn- update-mouse-pos
   [ev state]
-  (->> (assoc state :x (.-clientX ev) :y (.-clientY ev))
+  (->> ;;(assoc state :x 378 :y 338)
+       (assoc state :x (.-clientX ev) :y (.-clientY ev))
        (update-visibility-hull ev)
        ))
 
@@ -133,7 +143,8 @@
   (let [o           (g2d/vec2d x y)
         alpha       (:alpha state)
         [dd de ds]  static ;; [dd de ds] (build-data static r-geom alpha)
-        [segs hull] (spot/compute-visibility-hull o dist ds)
+        [segs hull] (pie/compute-visibility-hull *alpha* *apperture* o dist ds)
+        ;;[segs hull] (spot/compute-visibility-hull o dist ds)
         ;;hull       (global/compute-visibility-hull o de ds)
         new-state   (assoc state
                       :segs segs
@@ -160,7 +171,8 @@
                  state (init-game-state 100)]
             (let [[evt cb] (<! chan-out)
                   newstate (cb evt state)]
-              (render-game newstate)
+              (.requestAnimationFrame js/window (partial render-game newstate))
+              ;; (.log js/console "x: " (:x newstate) "y: " (:y newstate))
               (recur true newstate)
               ))))))
 

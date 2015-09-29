@@ -68,6 +68,8 @@
 (defn draw-hull-as-surfaces
   [context surfaces]
   (set! (. context -fillStyle) "yellow")
+  (set! (. context -strokeStyle) "red")
+  (set! (.-lineWidth context) 2)
   (doseq
     [[t
       {ox :x oy :y}
@@ -80,18 +82,25 @@
         (doto context
           (.beginPath)
           (.moveTo ox oy)
-          (.lineTo (:x a) (:y a))
           (.arc ox oy dist angle_a angle_b false)
           (.fill)
           )
         )
-      (doto context
-        (.beginPath)
-        (.moveTo (:x a) (:y a))
-        (.lineTo ox oy)
-        (.lineTo (:x b) (:y b))
-        (.lineTo (:x a) (:y a))
-        (.fill)
+      (do
+        (doto context
+          (.beginPath)
+          (.moveTo (:x a) (:y a))
+          (.lineTo ox oy)
+          (.lineTo (:x b) (:y b))
+          (.lineTo (:x a) (:y a))
+          (.fill)
+          )
+        (doto context
+          (.beginPath)
+          (.moveTo (:x a) (:y a))
+          (.lineTo (:x b) (:y b))
+          (.stroke)
+          )
         )
       )
     )
@@ -99,7 +108,7 @@
 
 (defn draw-geometry
   [context data]
-  (set! (. context -strokeStyle) "red")
+  (set! (. context -strokeStyle) "blue")
   (set! (.-lineWidth context) 2)
   (doseq [d data :let [{point :point :as ep} (first d)]]
     (.beginPath context)
@@ -141,4 +150,26 @@
       (.lineTo x2 y2)
       (.stroke)
       )
+    ))
+
+(defn draw-circle
+  [context ox oy dist]
+  (set! (. context -strokeStyle) "green")
+  (set! (.-lineWidth context) 2)
+  (doto context
+    (.beginPath)
+    (.arc ox oy dist 0 (* 2 Math/PI) false)
+    (.stroke)
+    ))
+
+(defn draw-pie
+  [context ox oy dist alpha beta]
+  (set! (. context -strokeStyle) "green")
+  (set! (.-lineWidth context) 2)
+  (doto context
+    (.beginPath)
+    (.moveTo ox oy)
+    (.arc ox oy dist alpha beta false)
+    (.lineTo ox oy)
+    (.stroke)
     ))

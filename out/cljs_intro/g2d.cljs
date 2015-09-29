@@ -33,9 +33,22 @@
 (declare polar)
 
 (defn ->polar
-  [{x :x y :y :as p}]
-  (polar (magnitude p)
-         (Math/atan2 y x)))
+  ([{x :x y :y :as p}]
+    (polar (magnitude p)
+           (Math/atan2 y x)))
+  ([o, p]
+   (->polar (minus p o))))
+
+(def O (vec2d 0 0))
+
+(defn polar->
+  ([p]
+   (polar-> O p))
+
+  ([o {r :r theta :theta}]
+   (-> (vec2d (Math/cos theta) (Math/sin theta))
+       (scale r)
+       (plus o))))
 
 (defn rotate ;; TODO : pourri
   [[x y] a]
@@ -79,13 +92,13 @@
 (defn intersection
   ;; http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
   ;; https://github.com/pgkelley4/line-segments-intersect/blob/master/js/line-segments-intersect.js
-  ;; 
+  ;;
   [{{rpx :x rpy :y :as ra} :o rb :p} {{spx :x spy :y :as sega} :a segb :b}]
   (let [r (minus rb ra)
         s (minus segb sega)
         uNumerator (cross (minus sega ra) r)
         denominator (cross r s)]
-    
+
     (cond
      (and (= 0 uNumerator) (= 0 denominator)) nil
      (= 0 denominator) nil
@@ -102,7 +115,7 @@
 ;; TODO : USE a protocol
 (defn distance
   "Return the distance from point m to ray [o p]"
-  
+
   [{{x1 :x y1 :y :as a} :o {x2 :x y2 :y :as b} :p}
    {x0 :x y0 :y :as m}]
   (let [{dx21 :x dy21 :y :as vab} (minus b a)
@@ -114,7 +127,7 @@
 
 (defn distance-to-segment
   "Return the distance from point m to segment [a b]"
-  
+
   [{{x1 :x y1 :y :as a} :a {x2 :x y2 :y :as b} :b}
    {x0 :x y0 :y :as m}]
   (let [{dx21 :x dy21 :y :as vab} (minus b a)
@@ -131,7 +144,7 @@
         om (minus m a)]
     (/ (magnitude om) (magnitude op))))
 
-;; ----- 
+;; -----
 
 (defn circle
   [o r]
@@ -149,7 +162,7 @@
 
   Code derived from : http://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
   "
-  
+
   [{{ox :x oy :y :as o} :o r :r} {a :a b :b}]
   (let [d (minus b a)
         f (minus a o)
@@ -157,7 +170,7 @@
         b (* 2.0 (dot f d))
         c (- (dot f f) (* r r))
         discriminant (- (* b b) (* 4 a c))]
-             
+
     (cond
      (<= discriminant 0)
        [false nil] ;; no collision possible
@@ -175,4 +188,33 @@
           (< (* t1 t2) 0) [true {}]              ;; a and b are in (one intersection on each "side" of segment)
           :else           [false nil]            ;; segment doesn't cross the circle
           )))))
+
+;; -----
+
+(defn ->-pi+pi
+  "Map any angle initially in [-pi, pi], possibly translated by a value in [-pi, +pi] into [-pi, pi[."
+  [x]
+  (cond
+   (< x (- Math/PI)) (+ x (* 2 Math/PI))
+   (< x Math/PI)     x
+   :else             (- x (* 2 Math/PI))
+   ))
+
+(defn -pi+pi->0+2pi
+  "Map any angle in [-pi, pi] into [0, 2pi[."
+  [x]
+  (if (>= x 0) x (+ x (* 2 Math/PI))))
+
+(defn ->0+2pi
+  "Map any angle initially in [0, 2pi[, possibly translated by a value in [-pi, +pi] into [0, 2pi[."
+  [x]
+  (cond
+   (< x 0)             (+ x (* 2 Math/PI))
+   (< x (* 2 Math/PI)) x
+   :else               (- x (* 2 Math/PI))
+   ))
+
+(defn deg->rad [d] (-> d (* Math/PI) (/ 180.0)))
+(defn rad->deg [r] (-> r (* 180.0) (/ Math/PI)))
+
 

@@ -1,22 +1,56 @@
-(ns cljs-intro.spot
+(ns cljs-intro.pie
   (:require [cljs-intro.core :as core]
-            [cljs-intro.g2d :as g2d]))
+            [cljs-intro.g2d :as g2d :refer [-pi+pi->0+2pi]]))
 
-(defn- select-segments
+(defn- is-segment-near-point?
   "Select segments for which absolute distance to m is lower than or equal to d"
 
-  [m d segments]
-  (filter #(let [sd (-> (g2d/distance-to-segment %1 m) (Math/abs))]
-             (and (< sd d)  ;; distance to segment must be STRICTLY lower than distance to horizon (reject tangent segments)
-                  (> sd 0)) ;; ... but also STRICTLY positive (if the observer lies ON a segment, ignore it)
-             )
-          segments)
+  [m d s]
+  (let [sd (-> (g2d/distance-to-segment s m) (Math/abs))]
+    (and (< sd d)   ;; distance to segment must be STRICTLY lower than distance to horizon (reject tangent segments)
+         (> sd 0))) ;; ... but also STRICTLY positive (if the observer lies ON a segment, ignore it)
   )
 
-(defn- trim-segment
-  "Trim segment s with respect to circle c"
+(defn- is-segment-outside-pie-piece?
+  "Return true if segment s is totally out of the piece of pie defined by
+   center o, direction angle alpha, and half apperture angle h."
+  [o alpha h {a :a b :b :as s}]
+  (let [h+    (* 2 h)
+        ra    (-> (g2d/->polar o a) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        rb    (-> (g2d/->polar o b) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        minab (Math/min ra rb)
+        maxab (Math/max ra rb)]
 
-  [{a :a b :b :as s} c]
+    ;; ra and rb are angular position of segment both ends, expressed in a base where
+    ;; the angle of vision lower bound is at angle 0.
+    ;; Therefore h+ is the upper angular bound of the angle of vision, in this coordinate system.
+    ;;
+    (cond
+     (< minab h+)
+       ;; At leat on end lies in the visible range
+       ;;
+       false
+
+     (> h (* Math/PI 0.5))
+       ;; Half apperture if greater than PI/2
+       ;; Therefore the segment can not be visible, otherwise minab would have been in visible range
+       ;;
+       true
+
+
+     :else
+       ;; Full apperture is less than PI.
+       ;; Therefore, if the second point (at maxab angular position)  is
+       ;; after (minab + PI), it lies in the same half-plae than h+ and h-, and
+       ;; crosses them both.
+       ;;
+       (<= maxab (+ minab Math/PI))
+     )))
+
+(defn- trim-segment-by-circle
+  "Trim segment s with respect to circle c.
+  "
+  [c {a :a b :b :as s}]
   (let [[col? cols] (g2d/intersection-segment-circle c s)]
     (when col?
       (let [ta (if (nil? (cols :t1)) a (g2d/stretch s (cols :t1)))
@@ -26,12 +60,118 @@
         (assoc s :a ta :b tb :ma ma :mb mb)
         ))))
 
-(defn- trim-segments
-  "Trim segments with respect to circle centered on m with radius d"
+(declare trim-segment-by-angle-narrow)
+(declare trim-segment-by-angle-wide)
+(defn- trim-segment-by-angle
+  "*WARN* segment should *NOT* be totally out-of-sight !"
+  [o d alpha h s]
+  (if (< h (* Math/PI 0.5))
+    (trim-segment-by-angle-narrow o d alpha h s)
+    (trim-segment-by-angle-wide o d alpha h s)))
 
-  [m d segments]
-  (let [c (g2d/circle m d)]
-    (map #(trim-segment %1 c) segments)))
+(defn- trim-segment-by-angle-wide
+  "TODO"
+  [o d alpha h {a :a b :b :as s}]
+  (let [h+    (* 2 h)
+        ra    (-> (g2d/->polar o a) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        rb    (-> (g2d/->polar o b) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        minab (Math/min ra rb)
+        maxab (Math/max ra rb)
+        p     (if (== minab ra) a b)
+        q     (if (== maxab ra) a b)]
+    (if (>= minab h+)
+      ;; The smallest angle is after h+, therefore the whole segment is out of sight
+      ;;
+      [nil]
+
+      ;; The smallest angle is before h+, lets look at the other angle position, relatively to h+ and (minab + PI)
+      ;;
+      (if (< maxab h+)
+        ;; The other point is inside angle of sight
+        ;;
+        (if (< maxab (+ minab Math/PI))
+          ;; The other point is before (minab + PI), therefore the segment is fully visible
+          ;;
+          [s]
+
+          ;; The other point is after  (minab + PI), therefore the segment crosses both bounds of angle of sight
+          ;;
+          (let [s1b (g2d/polar-> o (g2d/polar d (+ alpha h)))
+                r1  (g2d/ray o s1b)
+                i1  (g2d/intersection r1 s)
+                s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
+                r2 (g2d/ray o s2b)
+                i2 (g2d/intersection r2 s)]
+            [(g2d/segment (:p i1) q), (g2d/segment (:p i2) p)])
+          )
+
+        ;; The other point is outside angle of sight
+        ;;
+        (if (< maxab (+ minab Math/PI))
+          ;; Segment crosses upper bound
+          ;;
+          (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
+                r  (g2d/ray o sb)
+                i  (g2d/intersection r s)]
+            [(g2d/segment (:p i) p)])
+
+          ;; Segment crosses lower bound
+          ;;
+          (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
+                r  (g2d/ray o sb)
+                i  (g2d/intersection r s)]
+            [(g2d/segment (:p i) p)])
+         )
+        )
+      )
+    ))
+
+(defn- trim-segment-by-angle-narrow
+  "TODO"
+  [o d alpha h {a :a b :b :as s}]
+  (let [h+    (* 2 h)
+        ra    (-> (g2d/->polar o a) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        rb    (-> (g2d/->polar o b) (:theta) (- alpha) (g2d/->-pi+pi) (+ h) (g2d/->-pi+pi) (-pi+pi->0+2pi))
+        minab (Math/min ra rb)
+        maxab (Math/max ra rb)
+        p     (if (== minab ra) a b)
+        q     (if (== maxab ra) a b)]
+    (if (< minab h+)
+      (cond
+       (< maxab h+)
+         [s]
+
+       (< maxab (+ minab Math/PI))
+         ;; Segment crosses upper bound
+         ;;
+         (let [sb (g2d/polar-> o (g2d/polar d (+ alpha h)))
+               r  (g2d/ray o sb)
+               i  (g2d/intersection r s)]
+           [(g2d/segment p (:p i))])
+
+       :else
+         ;; Segment crosses lower bound
+         ;;
+         (let [sb (g2d/polar-> o (g2d/polar d (- alpha h)))
+               r  (g2d/ray o sb)
+               i  (g2d/intersection r s)]
+           [(g2d/segment (:p i) p)])
+       )
+
+      (if (<= maxab (+ minab Math/PI))
+        ;; Segment is fully invisible
+        [nil]
+
+        ;; Segment crosses both bounds
+        ;;
+        (let [s1b (g2d/polar-> o (g2d/polar d (+ alpha h)))
+              r1  (g2d/ray o s1b)
+              i1  (g2d/intersection r1 s)
+              s2b (g2d/polar-> o (g2d/polar d (- alpha h)))
+              r2 (g2d/ray o s2b)
+              i2 (g2d/intersection r2 s)]
+          [(g2d/segment (:p i1) (:p i2))])
+        ))))
 
 (defn- qualify-endpoint-geom
   [ep kind]
@@ -49,6 +189,7 @@
           segments))
 
 (defn- merge-sorted-endpoints
+  "When 2 endpoints are at the same position, then melt them, an reconstruct their bearing segments."
   [eps]
   (loop [acc []
          pts eps]
@@ -76,6 +217,15 @@
     [angle (merge-sorted-endpoints eps)]
     )
   )
+
+(defn- rebase-angle-sorted-endpoints
+  [alpha apperture eps-by-angle]
+  (map (fn [[angle eps]]
+    [(-> (-pi+pi->0+2pi angle) (- (-pi+pi->0+2pi alpha)) (g2d/->0+2pi) (+ apperture) (g2d/->0+2pi) (+ 0.000001) (g2d/->0+2pi)) eps])  eps-by-angle))
+
+(defn- sort-angle-sorted-endpoints
+  [eps-by-angle]
+  (sort (fn [[a _] [b _]] (<= a b)) eps-by-angle))
 
 (defn- compute-far-point
   [{o :o p :p} d]
@@ -209,7 +359,7 @@
 
   For a given angle, endpoints are sorted by increasing distance from the origin.
 
-  Output endpoints are decorated with :role qualifier.
+  Output endpoints are decorated with :role and :geom qualifiers.
 
   Input:
   ((a0 (ep00 ep01 ... ep0n))
@@ -221,11 +371,25 @@
   (ep0 ep1 ... epn)
   "
 
-  [o dist segs eps-by-angle]
-  (mapcat (fn [[angle eps]]
-            (cond (= 1 (count eps)) (process-one-endpoint o dist segs (first eps))
-                  :else             (process-many-endpoint o dist segs eps)))
-          eps-by-angle)
+  [alpha apperture o dist segs eps-by-angle]
+  (concat
+   ;; If necessary produce a first vertex
+   ;;
+   (let [angle (g2d/->-pi+pi (- alpha apperture))
+         sb    (g2d/polar-> o (g2d/polar dist angle))
+         r     (g2d/ray o sb)]
+     [(-> (compute-far-point r dist) (:p) (g2d/endpoint []) (qualify-endpoint-geom :farpoint) (core/qualify-endpoint-angle angle))])
+
+   (mapcat (fn [[_ eps]]
+             (cond (= 1 (count eps)) (process-one-endpoint o dist segs (first eps))
+                   :else             (process-many-endpoint o dist segs eps)))
+           eps-by-angle)
+
+   (let [angle (g2d/->-pi+pi (+ alpha apperture))
+         sb    (g2d/polar-> o (g2d/polar dist angle))
+         r     (g2d/ray o sb)]
+     [(-> (compute-far-point r dist) (:p) (g2d/endpoint []) (qualify-endpoint-geom :farpoint) (core/qualify-endpoint-angle angle))])
+   )
   )
 
 (defn- compute-hull-surfaces
@@ -242,7 +406,7 @@
   [o dist eps]
   (if (empty? eps)
     []
-    (let [pts (drop-while (fn [{role :role}] (= role :collision)) (cycle eps))] ;; Start from a non collision point (as they will be dropped)
+    (let [pts (drop-while (fn [{role :role}] (= role :collision)) eps)] ;; Start from a non collision point (as they will be dropped)
       (->
        (reduce (fn [[acc {a :point angle_a :angle geom_a :geom role_a :role :as epa}]
                     {b :point angle_b :angle geom_b :geom role_b :role :as epb}]
@@ -284,10 +448,14 @@
   "Given a position, visibility radius and a set of segments, compute
   the sequences of surface defining the visibility hull
   "
-  [o dist segments]
+  [alpha apperture o dist segments]
   (let [segs (->> segments
-                  (select-segments o dist)
-                  (trim-segments o dist)
+                  (remove (partial is-segment-outside-pie-piece? o alpha apperture))
+                  (filter (partial is-segment-near-point? o dist))
+                  (map (partial trim-segment-by-circle (g2d/circle o dist)))
+                  (remove nil?)
+                  (remove (partial is-segment-outside-pie-piece? o alpha apperture))
+                  (mapcat (partial trim-segment-by-angle o dist alpha apperture))
                   (remove nil?))
         eps (build-endpoint-list segs)]
 
@@ -295,7 +463,9 @@
      (core/sort-endpoints-by-angle o eps)
      (core/group-endpoints-by-angle)
      (merge-angle-sorted-endpoints)
-     (compute-hull-vertices o dist segs)
+     (rebase-angle-sorted-endpoints alpha apperture)
+     (sort-angle-sorted-endpoints)
+     (compute-hull-vertices alpha apperture o dist segs)
      (compute-hull-surfaces o dist)
      (conj [segs]))
     ))
