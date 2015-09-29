@@ -61,7 +61,7 @@
 
 (defn produce-parallel-vertical-segments-soup
   []
-  (add-frame 
+  (add-frame
    (for [sx (range 6)
          sy (range 3)]
      (let [x  (+ (+ (* 100 sx) 50) 20)
@@ -96,7 +96,7 @@
 (defn produce-square-soup
   ([]
      (produce-square-soup 6 3 50 40 50))
-  
+
   ([rx ry hc ox oy]
      (let [c (* hc 2)]
        (add-frame
@@ -123,7 +123,7 @@
              ihw (/ (- w (* 2 o)) 2)
              ihh (/ (- h (* 2 o)) 2)]
          (into []
-               (concat 
+               (concat
                 (produce-space-partition-soup (+ x o)    (+ y o)    ihw ihh (* p 2) (- d 1))
                 (produce-space-partition-soup (+ x hw o) (+ y o)    ihw ihh (* p 2) (- d 1))
                 (produce-space-partition-soup (+ x hw o) (+ y hh o) ihw ihh (* p 2) (- d 1))
@@ -141,6 +141,43 @@
 
 (defn produce-block-soup
   []
-  (add-frame 
+  (add-frame
    (produce-space-partition-soup 10 10 620 320)))
 
+
+(defn produce-polygon
+  [x y r c offset closed]
+  [{:data   (vec (mapcat (fn [a] [(-> (Math/cos (+ a offset)) (* r) (+ x))
+                                  (-> (Math/sin (+ a offset)) (* r) (+ y))]) (range 0 (* 2 Math/PI) (/ ( * Math/PI 2) c))))
+    :closed closed}]
+  )
+
+(defn produce-nested-polygons
+  [x y r c]
+  (mapcat (fn [rr] (produce-polygon x y rr (+ 5 (* (Math/random) 5)) (* (Math/random) Math/PI) false)) (->> (range 0 r (/ r c)) (drop 1)))
+  )
+
+(defn produce-spiral
+  [x y r offset]
+  (let [twopi (* 2 Math/PI)
+        spir  (* 6 twopi)
+        segs  200
+        step  (/ spir segs)
+        dr    (/ r segs)
+        coefd 0.25
+        coeft 1]
+
+    (map (fn [rng]
+           (let [l       (count rng)                     ;; indices range length
+                 d       (* (Math/random) coefd l)       ;; how many indices dropped
+                 t       (* (Math/random) coeft (- l d)) ;; how many indices taken
+                 roffset (+ (* Math/PI (Math/random)))   ;; Shifting offset
+                 ]
+             {:data (mapcat (fn [i] [(-> (Math/cos (+ (* i step) roffset)) (* dr i) (+ x))
+                                     (-> (Math/sin (+ (* i step) roffset)) (* dr i) (+ y))]) (->> rng (drop d) (take t)))
+              :close false}
+             ))
+         (partition 10 (range 0 segs)))
+
+    )
+  )

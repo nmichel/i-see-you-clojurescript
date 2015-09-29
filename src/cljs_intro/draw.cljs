@@ -108,7 +108,7 @@
 
 (defn draw-geometry
   [context data]
-  (set! (. context -strokeStyle) "red")
+  (set! (. context -strokeStyle) "blue")
   (set! (.-lineWidth context) 2)
   (doseq [d data :let [{point :point :as ep} (first d)]]
     (.beginPath context)
@@ -150,6 +150,16 @@
       (.lineTo x2 y2)
       (.stroke)
       )
+    ))
+
+(defn draw-circle
+  [context ox oy dist]
+  (set! (. context -strokeStyle) "green")
+  (set! (.-lineWidth context) 2)
+  (doto context
+    (.beginPath)
+    (.arc ox oy dist 0 (* 2 Math/PI) false)
+    (.stroke)
     ))
 
 (defn draw-pie
