@@ -1,6 +1,6 @@
 (ns cljs-intro.global
   (:require [cljs-intro.g2d :as g2d]
-            [cljs-intro.core :as core]))
+            [cljs-intro.core :as core :refer [qualify-endpoint-geom qualify-endpoint-role]]))
 
 (defn- build-begin-endpoint [points segments closed]
   (g2d/endpoint (first points)
@@ -33,15 +33,20 @@
   [{:keys [point] :as ep} segments o]
   (let [ray          (g2d/ray o point)
         tested-segs  (core/compute-non-bearing-segments-list [ep] segments)
-        [c :as cols] (core/compute-ray-segments-intersections ray tested-segs) ; c is nil when (empty? cols) is true
+        cols         (core/compute-ray-segments-intersections ray tested-segs)
         classif      (core/classify-endpoint ray ep)]
-    (cond
-     (empty? cols)      [[point "white"]]
-     (< (:f c) 1)       [[(:p c) "black"]]
-     (= classif :cross) [[point "yellow"]]
-     (= classif :in)    [[(:p c) "green"] [point "blue"]]
-     (= classif :out)   [[point "green"] [(:p c) "blue"]]
-     )
+    (if (empty? cols)
+      [(qualify-endpoint-role ep :cross)]
+      (let [[c] cols
+            col (-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision))]
+        (cond
+         (< (:f c) 1)       [(qualify-endpoint-role col :collision)]
+         (= classif :cross) [(qualify-endpoint-role ep :cross)]
+         (= classif :in)    [(qualify-endpoint-role col :out) (qualify-endpoint-role ep :in)]
+         (= classif :out)   [(qualify-endpoint-role ep :out) (qualify-endpoint-role col :in)]
+         )
+        )
+      )
     )
   )
 
@@ -58,17 +63,17 @@
      ;; General case : at least one active endpoint
      ;;
      :else (let [tested-segs     (core/compute-non-bearing-segments-list eps segments) ;; only segments not bearing any endpoint
-                 [col :as cols]  (core/compute-ray-segments-intersections ray tested-segs) ;; c is nil when (empty? cols) is true
+                 [c :as cols]  (core/compute-ray-segments-intersections ray tested-segs) ;; c is nil when (empty? cols) is true
                  [c1 ep1 :as e1] (first eps-wo-first-collinear)]
 
              (cond
               ;; There is at least a collision, and the nearest if before the first ep
               ;;
-              (and (not (nil? col)) (< (:f col) 1)) [[(:p col) "black"]]
+              (and (not (nil? c)) (< (:f c) 1)) [(-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :collision))]
 
               ;; The first ep is :cross
               ;;
-              (= :cross c1) [[(:point ep1) "white"]]
+              (= :cross c1) [(qualify-endpoint-role ep1 :cross)]
 
               ;; First ep is :out
               ;; Search for first :in or :cross (is any)
@@ -80,22 +85,22 @@
                              (nil? c2) (cond
                                         ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
                                         ;;
-                                        (nil? col) [[(:point ep1) "white"]]
+                                        (nil? c) [(qualify-endpoint-role ep1 :out)]
                                         ;; no closing, but a col
                                         ;;
-                                        :else [[(:point ep1) "green"] [(:p col) "blue"]]
+                                        :else [(qualify-endpoint-role ep1 :out) (-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in))]
                                         )
 
                             ;; A closing ep and no col
                             ;;
-                            (nil? col) [[(:point ep1) "green"] [(:point p2) "blue"]]
+                            (nil? c) [(qualify-endpoint-role ep1 :out) (qualify-endpoint-role p2 :in)]
 
                              ;; A closing ep. Depending on the relative positions of the closing point and the
                              ;; closest collision, use one or the other as the second point
                              ;;
                              :else (let [r2 (g2d/ratio ray (:point p2))
-                                         p (if (< (:f col) r2) (:p col) (:point p2))]
-                                     [[(:point ep1) "green"] [p "blue"]])
+                                         p (if (< (:f c) r2) (:p c) (:point p2))]
+                                     [(qualify-endpoint-role ep1 :out) (-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in))])
                              )
                             )
 
@@ -109,22 +114,22 @@
                             (nil? c2) (cond
                                        ;; Strange case : no closing ep and no collision. Should not append in a well defined geometry
                                        ;;
-                                       (nil? col) [[(:point ep1) "white"]]
+                                       (nil? c) [(qualify-endpoint-role ep1 :in)]
                                        ;; no closing, but a col
                                        ;;
-                                       :else [[(:p col) "green"] [(:point ep1) "blue"]]
+                                       :else [(-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :out)) (qualify-endpoint-role ep1 :in)]
                                        )
 
                             ;; A closing ep and no col
                             ;;
-                            (nil? col) [[(:point p2) "green"] [(:point ep1) "blue"]]
+                            (nil? c) [(qualify-endpoint-role p2 :out) (qualify-endpoint-role ep1 :in)]
 
                              ;; A closing ep. Depending on the relative positions of the closing point and the
                              ;; closest collision, use one or the other as the second point
                              ;;
                              :else (let [r2 (g2d/ratio ray (:point p2))
-                                         p (if (< (:f col) r2) (:p col) (:point p2))]
-                                     [[p "green"] [(:point ep1) "blue"]])
+                                         p (if (< (:f c) r2) (:p c) (:point p2))]
+                                     [(-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in)) (qualify-endpoint-role ep1 :out)])
                              )
                            )
               )
