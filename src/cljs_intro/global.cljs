@@ -30,7 +30,7 @@
     ))
 
 (defn- process-one-endpoint
-  [{:keys [point] :as ep} segments o]
+  [o segments {:keys [point angle] :as ep}]
   (let [ray          (g2d/ray o point)
         tested-segs  (core/compute-non-bearing-segments-list [ep] segments)
         cols         (core/compute-ray-segments-intersections ray tested-segs)
@@ -40,10 +40,10 @@
       (let [[c] cols
             col (-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision))]
         (cond
-         (< (:f c) 1)       [(qualify-endpoint-role col :collision)]
+         (< (:f c) 1)       [(-> col (qualify-endpoint-role :collision) (core/qualify-endpoint-angle angle))]
          (= classif :cross) [(qualify-endpoint-role ep :cross)]
-         (= classif :in)    [(qualify-endpoint-role col :out) (qualify-endpoint-role ep :in)]
-         (= classif :out)   [(qualify-endpoint-role ep :out) (qualify-endpoint-role col :in)]
+         (= classif :in)    [( -> col (qualify-endpoint-role :out) (core/qualify-endpoint-angle angle)) (qualify-endpoint-role ep :in)]
+         (= classif :out)   [(qualify-endpoint-role ep :out) (-> col (qualify-endpoint-role :in) (core/qualify-endpoint-angle angle))]
          )
         )
       )
@@ -51,7 +51,7 @@
   )
 
 (defn- process-many-endpoint
-  [[{:keys [point]} :as eps] segments o]
+  [o segments [{:keys [point angle]} :as eps]]
   (let [ray                    (g2d/ray o point) ;; use the first point as origin of the ray
         eps-with-classif       (map (fn[e] [(core/classify-endpoint ray e) e]) eps) ;; ( [classif ep] [classif ep] ... )
         eps-wo-first-collinear (drop-while #(= :collinear (nth %1 0)) eps-with-classif)]
@@ -69,7 +69,7 @@
              (cond
               ;; There is at least a collision, and the nearest if before the first ep
               ;;
-              (and (not (nil? c)) (< (:f c) 1)) [(-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :collision))]
+              (and (not (nil? c)) (< (:f c) 1)) [(-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :collision) (core/qualify-endpoint-angle angle))]
 
               ;; The first ep is :cross
               ;;
@@ -88,7 +88,7 @@
                                         (nil? c) [(qualify-endpoint-role ep1 :out)]
                                         ;; no closing, but a col
                                         ;;
-                                        :else [(qualify-endpoint-role ep1 :out) (-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in))]
+                                        :else [(qualify-endpoint-role ep1 :out) (-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in) (core/qualify-endpoint-angle angle))]
                                         )
 
                             ;; A closing ep and no col
@@ -100,7 +100,7 @@
                              ;;
                              :else (let [r2 (g2d/ratio ray (:point p2))
                                          p (if (< (:f c) r2) (:p c) (:point p2))]
-                                     [(qualify-endpoint-role ep1 :out) (-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in))])
+                                     [(qualify-endpoint-role ep1 :out) (-> p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in) (core/qualify-endpoint-angle angle))])
                              )
                             )
 
@@ -117,7 +117,7 @@
                                        (nil? c) [(qualify-endpoint-role ep1 :in)]
                                        ;; no closing, but a col
                                        ;;
-                                       :else [(-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :out)) (qualify-endpoint-role ep1 :in)]
+                                       :else [(-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :out) (core/qualify-endpoint-angle angle)) (qualify-endpoint-role ep1 :in)]
                                        )
 
                             ;; A closing ep and no col
@@ -129,12 +129,66 @@
                              ;;
                              :else (let [r2 (g2d/ratio ray (:point p2))
                                          p (if (< (:f c) r2) (:p c) (:point p2))]
-                                     [(-> c :p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in)) (qualify-endpoint-role ep1 :out)])
+                                     [(-> p (g2d/endpoint []) (qualify-endpoint-geom :collision) (qualify-endpoint-role :in) (core/qualify-endpoint-angle angle)) (qualify-endpoint-role ep1 :out)])
                              )
                            )
               )
              )
      )
+    )
+  )
+
+(defn- compute-hull-vertices
+  "Given a sequence of pairs (angle, endpoints) sorted by increasing angle, compute the sequence of endpoints defining the visibility hull.
+
+  For a given angle, endpoints are sorted by increasing distance from the origin.
+
+  Output endpoints are decorated with :role qualifier.
+
+  Input:
+  ((a0 (ep00 ep01 ... ep0n))
+  (a1 (ep10 ep11 ... ep1n))
+  ...
+  (am (epm0 epm1 ... epmn)))
+
+  Output:
+  (ep0 ep1 ... epn)"
+  [o segs eps-by-angle]
+  (mapcat (fn [[_ eps]]
+            (if (= 1 (count eps))
+              (process-one-endpoint o segs (first eps))
+              (process-many-endpoint o segs eps)))
+          eps-by-angle)
+  )
+
+(defn- compute-hull-surfaces
+  "Given a sequence of qualified endpoints, compute the sequence defining the visibility hull.
+
+  Each spitted out surface is a definition of either a triangle or an arc.
+
+  Input:
+  (ep0 ep1 ... epn)
+
+  Output:
+  (s0 s1 ... sn)
+  "
+  [o eps]
+  (if (empty? eps)
+    []
+    (let [pts (drop-while (fn [{role :role}] (= role :collision)) (cycle eps))] ;; Start from a non collision point (as they will be dropped)
+      (->>
+       (->> (rest pts) (take (count eps)))
+       (reduce (fn [[acc {a :point angle_a :angle geom_a :geom role_a :role :as epa}]
+                    {b :point angle_b :angle geom_b :geom role_b :role :as epb}]
+                 (cond
+                  (= angle_a angle_b)                                   [acc epb]
+                  (or (= :out role_b) (= :cross role_b) (= :in role_b)) [(conj acc [:triangle o epa epb]) epb]
+                  :else                                                 [acc epa]))
+               [[]           ;; obviously no surface emitted yet
+                (first pts)] ;; initialize with first endpoint
+               )
+       first)
+      )
     )
   )
 
@@ -153,10 +207,7 @@
   [o eps segments]
   (->> (core/sort-endpoints-by-angle o eps)
        (core/group-endpoints-by-angle)
-       (reduce (fn [acc [angle [ep :as eps]]]
-                 (into acc
-                       (cond
-                        (= 1 (count eps)) (process-one-endpoint ep segments o)
-                        :else             (process-many-endpoint eps segments o))))
-               []))
+       (compute-hull-vertices o segments)
+       (compute-hull-surfaces o)
+       )
   )

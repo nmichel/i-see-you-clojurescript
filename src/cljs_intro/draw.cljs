@@ -17,54 +17,6 @@
   (.fillRect context x y w h)
   )
 
-(defn draw-hull-by-clipping
-  [context ox oy [{{px :x py :y} :point} & pts] img]
-  (doto context
-    (.save)
-    (.beginPath)
-    (.moveTo px py)
-    )
-  (doseq [{{ax :x ay :y} :point} pts]
-    (.lineTo context ax ay)
-    )
-  (doto context
-    (.clip)
-    (draw-rect 0 0 800 600 "green") ;;(.drawImage context img 0 0 800 600)
-    (.restore)
-    )
-  )
-
-(defn draw-hull-as-polygon
-  [context ox oy [{{px :x py :y} :point} & pts]]
-  (set! (. context -fillStyle) "yellow")
-  ;; (set! (. context -strokeStyle) "yellow")
-  (set! (.-lineWidth context) 2)
-  (.beginPath context)
-  (.moveTo context px py)
-  (doseq [{{ax :x ay :y} :point} pts]
-    (.lineTo context ax ay)
-    )
-  (.fill context)
-  )
-
-(defn draw-hull-as-fan
-  [context ox oy pts img]
-  (set! (. context -fillStyle) "yellow")
-  (set! (. context -strokeStyle) "orange")
-  (set! (.-lineWidth context) 2)
-  (doseq [[{{ax :x ay :y} :point} {{bx :x by :y} :point}] (->> pts (cycle) (partition 2 1) (take (count pts)))]
-    (doto context
-      (.beginPath)
-      (.moveTo ax ay)
-      (.lineTo ox oy)
-      (.lineTo bx by)
-      (.lineTo ax ay)
-      (.fill)
-      (.stroke)
-      )
-    )
-  )
-
 (defn draw-hull-as-surfaces
   [context surfaces]
   (set! (. context -fillStyle) "yellow")
