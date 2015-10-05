@@ -1,5 +1,5 @@
 (ns cljs-intro.pie
-  (:require [cljs-intro.core :as core]
+  (:require [cljs-intro.core :as core :refer [qualify-endpoint-geom qualify-endpoint-role]]
             [cljs-intro.g2d :as g2d :refer [-pi+pi->0+2pi]]))
 
 (defn- is-segment-near-point?
@@ -172,14 +172,6 @@
               i2 (g2d/intersection r2 s)]
           [(g2d/segment (:p i1) (:p i2))])
         ))))
-
-(defn- qualify-endpoint-geom
-  [ep kind]
-  (assoc ep :geom kind))
-
-(defn- qualify-endpoint-role
-  [ep kind]
-  (assoc ep :role kind))
 
 (defn- build-endpoint-list
   [segments]
@@ -448,7 +440,7 @@
   "Given a position, visibility radius and a set of segments, compute
   the sequences of surface defining the visibility hull
   "
-  [alpha apperture o dist segments]
+  [alpha apperture o dist [_ _ segments]]
   (let [segs (->> segments
                   (remove (partial is-segment-outside-pie-piece? o alpha apperture))
                   (filter (partial is-segment-near-point? o dist))

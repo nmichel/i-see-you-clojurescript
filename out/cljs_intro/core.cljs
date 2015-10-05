@@ -76,6 +76,14 @@
   [ep angle]
   (assoc ep :angle angle))
 
+(defn qualify-endpoint-geom
+  [ep kind]
+  (assoc ep :geom kind))
+
+(defn qualify-endpoint-role
+  [ep kind]
+  (assoc ep :role kind))
+
 (defn- quite-same
   [e a b]
   (-> (- a b) (Math/abs) (< e)))

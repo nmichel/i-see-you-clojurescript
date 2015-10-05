@@ -22,9 +22,9 @@
 ;;(def geom (data/produce-square-soup 1 1 100 20 20))
 ;;(def geom (data/produce-block-soup))
 ;;(def geom (data/produce-oriented-segments-soup))
-;;(def geom (data/produce-polygon 320 180 170 10 0 false))
-;;(def geom (data/produce-nested-polygons 320 180 170 5))
-(def geom (data/produce-spiral 320 180 170 0))
+;;(def geom (data/add-frame (data/produce-polygon 320 180 100 10 0 false)))
+;;(def geom (data/add-frame (data/produce-nested-polygons 320 180 170 5)))
+(def geom (data/add-frame (data/produce-spiral 320 180 170 0)))
 
 (defn- build-dynamic-data
   []
@@ -65,6 +65,9 @@
                  (fn [ev]
                    (put! chan-out [ev cb]))))
 
+(def *alpha* (g2d/deg->rad 127))
+(def *apperture* (g2d/deg->rad 137.0))
+
 (defn- init-game-state
   [dist]
   (let [target   (.getElementById js/document "target")
@@ -74,28 +77,25 @@
         height   (.-height target)
         r-geom   (build-dynamic-data)]
 
-    {:target  target
-     :context context
-     :img     img
-     :width   width
-     :height  height
-     :hull    nil
-     :x       320
-     :y       180
-     :r-geom  r-geom
-     :alpha   0
-     :static  (core/build-geom-data geom)
-     :dynamic nil
-     :dist    dist}
+    {:target    target
+     :context   context
+     :width     width
+     :height    height
+     :hull      nil
+     :x         320
+     :y         180
+     :r-geom    r-geom
+     :alpha     *alpha*
+     :apperture *apperture*
+     :static    (core/build-geom-data geom)
+     :dynamic   nil
+     :dist      dist
+     :algo      :global}
     )
   )
 
-
-(def *alpha* (g2d/deg->rad 127))
-(def *apperture* (g2d/deg->rad 137.0))
-
 (defn- render-game
-  [{:keys [img width height segs hull x y context eps dynamic dist] :as state}]
+  [{:keys [width height segs hull x y context eps dynamic dist alpha apperture algo] :as state}]
   (let [[drawdata eps _allsegs] dynamic
         o                       (g2d/vec2d x y)
         erase-color             "grey"]
@@ -103,12 +103,10 @@
     (draw/draw-geometry context drawdata)
     (draw/draw-segments context segs)
     (draw/draw-hull-as-surfaces context hull)
-    (draw/draw-pie context x y dist (-> (- *alpha* *apperture*) (g2d/-pi+pi->0+2pi)) (-> (+ *alpha* *apperture*) (g2d/-pi+pi->0+2pi))) ;; work only with pie/compute-visibility-hull output
-    ;;(draw/draw-circle context x y dist) ;; work only with spot/compute-visibility-hull output
-    ;;(draw/draw-hull-as-polygon context x y hull) ;; work only with global/compute-visibility-hull output
-    ;;(draw/draw-hull-as-fan context x y hull img) ;; work only with global/compute-visibility-hull output
-    ;;(draw/draw-hull-by-clipping context x y hull img) ;; work only with global/compute-visibility-hull output
-    ;;(draw/draw-hull-vertices context hull) ;; work only with global/compute-visibility-hull output
+    (cond
+     (= algo :pie) (draw/draw-pie context x y dist (-> (- alpha apperture) (g2d/-pi+pi->0+2pi)) (-> (+ alpha apperture) (g2d/-pi+pi->0+2pi)))
+     (= algo :spot) (draw/draw-circle context x y dist)
+     )
     ;;(draw/draw-endpoints context eps)
     (draw/draw-point context o "lightblue")
     ))
@@ -127,31 +125,43 @@
 
 (defn- update-mouse-pos
   [ev state]
-  (->> ;;(assoc state :x 378 :y 338)
-       (assoc state :x (.-clientX ev) :y (.-clientY ev))
-       (update-visibility-hull ev)
+  (->> ;;(assoc state :x 500 :y 180)
+       (assoc state :x (.-offsetX ev) :y (.-offsetY ev))
+       update-visibility-hull
        ))
 
 (defn- update-click-pos
   [ev state]
   (->> (assoc state :x (.-clientX ev) :y (.-clientY ev))
-       ;;(update-visibility-hull ev)
+       ;;update-visibility-hull
        ))
 
+(defn- change-algo
+  [k ev state]
+  (-> (assoc state :algo k)
+      update-visibility-hull))
+
+(defn- get-compute-visibility-hull-function
+  [{:keys [x y dist algo alpha apperture]}]
+  (let [o (g2d/vec2d x y)]
+    (cond
+     (= :global algo) (partial global/compute-visibility-hull o)
+     (= :spot algo) (partial spot/compute-visibility-hull o dist)
+     (= :pie algo) (partial pie/compute-visibility-hull alpha apperture o dist )
+     )))
+
 (defn- update-visibility-hull
-  [ev {:keys [static x y r-geom dist] :as state}]
-  (let [o           (g2d/vec2d x y)
-        alpha       (:alpha state)
-        [dd de ds]  static ;; [dd de ds] (build-data static r-geom alpha)
-        [segs hull] (pie/compute-visibility-hull *alpha* *apperture* o dist ds)
-        ;;[segs hull] (spot/compute-visibility-hull o dist ds)
-        ;;hull       (global/compute-visibility-hull o de ds)
-        new-state   (assoc state
-                      :segs segs
-                      :hull hull
-                      :dynamic [dd de ds]
-                      :alpha (+ alpha (/ Math/PI 20)))]
-    new-state))
+  [{:keys [static x y r-geom dist alpha apperture] :as state}]
+  (let [data          static ;; data (build-data static r-geom alpha)
+        visibility-fn (get-compute-visibility-hull-function state)
+        [segs hull]   (visibility-fn data)]
+
+    (assoc state
+      :segs segs
+      :hull hull
+      :dynamic data
+;;      :alpha (+ alpha (/ Math/PI 20))
+      )))
 
 (defn ^:export init
   []
@@ -162,17 +172,23 @@
         [drawdata eps allsegs :as data] (core/build-geom-data geom)]
     (let [chan-out (chan)]
       (listen-dom-evt chan-out target :mousemove update-mouse-pos)
+      (listen-dom-evt chan-out (.getElementById js/document "algo_global") :click (partial change-algo :global))
+      (listen-dom-evt chan-out (.getElementById js/document "algo_spot") :click (partial change-algo :spot))
+      (listen-dom-evt chan-out (.getElementById js/document "algo_pie") :click (partial change-algo :pie))
       ;;(listen-dom-evt chan-out target :click update-click-pos)
       ;;(listen-timer chan-out 50 update-visibility-hull)
 
+
       ;; Game loop
       ;;
-      (go (loop [cont true
+      (go
+       (put! chan-out [:click (partial change-algo :global)])
+       (loop [cont true
                  state (init-game-state 100)]
             (let [[evt cb] (<! chan-out)
                   newstate (cb evt state)]
               (.requestAnimationFrame js/window (partial render-game newstate))
-              ;; (.log js/console "x: " (:x newstate) "y: " (:y newstate))
+              ;;(.log js/console "x: " (:x newstate) "y: " (:y newstate))
               (recur true newstate)
               ))))))
 

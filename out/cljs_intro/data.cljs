@@ -1,6 +1,6 @@
 (ns cljs-intro.data)
 
-(defn- add-frame
+(defn add-frame
   [data]
   (into []
         (concat [{:data [0.0,0.0,640.0,0.0,640.0,360.0,0.0,360.0] :closed true}]
@@ -167,17 +167,19 @@
         coefd 0.25
         coeft 1]
 
-    (map (fn [rng]
-           (let [l       (count rng)                     ;; indices range length
-                 d       (* (Math/random) coefd l)       ;; how many indices dropped
-                 t       (* (Math/random) coeft (- l d)) ;; how many indices taken
-                 roffset (+ (* Math/PI (Math/random)))   ;; Shifting offset
-                 ]
-             {:data (mapcat (fn [i] [(-> (Math/cos (+ (* i step) roffset)) (* dr i) (+ x))
-                                     (-> (Math/sin (+ (* i step) roffset)) (* dr i) (+ y))]) (->> rng (drop d) (take t)))
-              :close false}
-             ))
-         (partition 10 (range 0 segs)))
+    (->> (partition 10 (range 1 segs))
+         (filter #(>= (count %) 2))
+         (map (fn [rng]
+                (let [l       (count rng)                              ;; indices range length
+                      d       (min (* (Math/random) coefd l) (- l 2))  ;; how many indices dropped (maximum (l - 2))
+                      t       (max (* (Math/random) coeft (- l d)) 2)  ;; how many indices taken (minimum 2)
+                      roffset (+ (* Math/PI (Math/random)))            ;; Angular shift
+                      ]
+                  {:data (mapcat (fn [i] [(-> (Math/cos (+ (* i step) roffset)) (* dr i) (+ x))
+                                          (-> (Math/sin (+ (* i step) roffset)) (* dr i) (+ y))]) (->> rng (drop d) (take t)))
+                   :closed false}
+                  )))
+         )
 
     )
   )

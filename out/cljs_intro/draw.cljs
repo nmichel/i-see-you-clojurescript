@@ -17,54 +17,6 @@
   (.fillRect context x y w h)
   )
 
-(defn draw-hull-by-clipping
-  [context ox oy [[p _pcolor] & pts] img]
-  (doto context
-    (.save)
-    (.beginPath)
-    (.moveTo (:x p) (:y p))
-    )
-  (doseq [[a _acolor] pts]
-    (.lineTo context (:x a) (:y a))
-    )
-  (doto context
-    (.clip)
-    (draw-rect 0 0 800 600 "green") ;;(.drawImage context img 0 0 800 600)
-    (.restore)
-    )
-  )
-
-(defn draw-hull-as-polygon
-  [context ox oy [[p _pcolor] & pts]]
-  (set! (. context -fillStyle) "yellow")
-  ;; (set! (. context -strokeStyle) "yellow")
-  (set! (.-lineWidth context) 2)
-  (.beginPath context)
-  (.moveTo context (:x p) (:y p))
-  (doseq [[a _acolor] pts]
-    (.lineTo context (:x a) (:y a))
-    )
-  (.fill context)
-  )
-
-(defn draw-hull-as-fan
-  [context ox oy pts img]
-  (set! (. context -fillStyle) "yellow")
-  (set! (. context -strokeStyle) "orange")
-  (set! (.-lineWidth context) 2)
-  (doseq [[[{ax :x ay :y} ca] [{bx :x by :y} cb]] (->> pts (cycle) (partition 2 1) (take (count pts)))]
-    (doto context
-      (.beginPath)
-      (.moveTo ax ay)
-      (.lineTo ox oy)
-      (.lineTo bx by)
-      (.lineTo ax ay)
-      (.fill)
-      (.stroke)
-      )
-    )
-  )
-
 (defn draw-hull-as-surfaces
   [context surfaces]
   (set! (. context -fillStyle) "yellow")
@@ -121,10 +73,16 @@
     )
   )
 
+(def ^private role-to-color-map
+  {:in        "blue"
+   :out       "green"
+   :cross     "yellow"
+   :collision "black"})
+
 (defn draw-hull-vertices
   [context pts]
-  (doseq [[f color] pts]
-    (draw-point context f color)
+  (doseq [{p :point r :role} pts]
+    (draw-point context p (get role-to-color-map r "white"))
     )
   )
 

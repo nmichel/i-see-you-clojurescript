@@ -1,5 +1,5 @@
 (ns cljs-intro.spot
-  (:require [cljs-intro.core :as core]
+  (:require [cljs-intro.core :as core :refer [qualify-endpoint-geom qualify-endpoint-role]]
             [cljs-intro.g2d :as g2d]))
 
 (defn- select-segments
@@ -32,14 +32,6 @@
   [m d segments]
   (let [c (g2d/circle m d)]
     (map #(trim-segment %1 c) segments)))
-
-(defn- qualify-endpoint-geom
-  [ep kind]
-  (assoc ep :geom kind))
-
-(defn- qualify-endpoint-role
-  [ep kind]
-  (assoc ep :role kind))
 
 (defn- build-endpoint-list
   [segments]
@@ -284,7 +276,7 @@
   "Given a position, visibility radius and a set of segments, compute
   the sequences of surface defining the visibility hull
   "
-  [o dist segments]
+  [o dist  [_ _ segments]]
   (let [segs (->> segments
                   (select-segments o dist)
                   (trim-segments o dist)
