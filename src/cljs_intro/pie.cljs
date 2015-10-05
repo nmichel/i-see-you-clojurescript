@@ -440,7 +440,7 @@
   "Given a position, visibility radius and a set of segments, compute
   the sequences of surface defining the visibility hull
   "
-  [alpha apperture o dist segments]
+  [alpha apperture o dist [_ _ segments]]
   (let [segs (->> segments
                   (remove (partial is-segment-outside-pie-piece? o alpha apperture))
                   (filter (partial is-segment-near-point? o dist))

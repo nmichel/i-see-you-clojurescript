@@ -276,7 +276,7 @@
   "Given a position, visibility radius and a set of segments, compute
   the sequences of surface defining the visibility hull
   "
-  [o dist segments]
+  [o dist  [_ _ segments]]
   (let [segs (->> segments
                   (select-segments o dist)
                   (trim-segments o dist)
