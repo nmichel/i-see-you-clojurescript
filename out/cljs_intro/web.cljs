@@ -20,11 +20,11 @@
 ;;(def geom (data/produce-square-soup 12 6 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 25 20 25))
 ;;(def geom (data/produce-square-soup 1 1 100 20 20))
-;;(def geom (data/produce-block-soup))
+(def geom (data/produce-block-soup))
 ;;(def geom (data/produce-oriented-segments-soup))
 ;;(def geom (data/add-frame (data/produce-polygon 320 180 100 10 0 false)))
 ;;(def geom (data/add-frame (data/produce-nested-polygons 320 180 170 5)))
-(def geom (data/add-frame (data/produce-spiral 320 180 170 0)))
+;;(def geom (data/add-frame (data/produce-spiral 320 180 170 0)))
 
 (defn- build-dynamic-data
   []
@@ -138,7 +138,34 @@
 
 (defn- change-algo
   [k ev state]
+  (let [algo k]
+    (cond
+     (= :global algo) (do
+                        (dommy/remove-class! (dommy/sel1 "div[name='spot_group']") "visible")
+                        (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+     (= :spot algo) (do
+                      (dommy/add-class! (dommy/sel1 "div[name='spot_group']") "visible")
+                       (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+     (= :pie algo) (do
+                     (dommy/add-class! (dommy/sel1 "div[name='spot_group']") "visible")
+                     (dommy/add-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+     ))
   (-> (assoc state :algo k)
+      update-visibility-hull))
+
+(defn- change-radius
+  [radius state]
+  (-> (assoc state :dist (.-newValue radius))
+      update-visibility-hull))
+
+(defn- change-angle
+  [angle state]
+  (-> (assoc state :alpha (-> (.-newValue angle) (- 180) g2d/deg->rad))
+      update-visibility-hull))
+
+(defn- change-apperture
+  [apperture state]
+  (-> (assoc state :apperture (-> (.-newValue apperture) g2d/deg->rad))
       update-visibility-hull))
 
 (defn- get-compute-visibility-hull-function
@@ -170,11 +197,22 @@
         width                  (.-width target)
         height                 (.-height target)
         [drawdata eps allsegs :as data] (core/build-geom-data geom)]
-    (let [chan-out (chan)]
+    (let [chan-out (chan)
+          opts      (clj->js {:tooltip_position "bottom"})
+          radius    (js/Slider. "#spot_radius_slider" opts)
+          angle     (js/Slider. "#pie_angle_slider" opts)
+          apperture (js/Slider. "#pie_apperture_slider" opts)]
       (listen-dom-evt chan-out target :mousemove update-mouse-pos)
       (listen-dom-evt chan-out (.getElementById js/document "algo_global") :click (partial change-algo :global))
       (listen-dom-evt chan-out (.getElementById js/document "algo_spot") :click (partial change-algo :spot))
       (listen-dom-evt chan-out (.getElementById js/document "algo_pie") :click (partial change-algo :pie))
+      (.on radius "change" (fn [ev]
+                             (put! chan-out [ev change-radius])))
+      (.on angle "change" (fn [ev]
+                            (put! chan-out [ev change-angle])))
+      (.on apperture "change" (fn [ev]
+                                (put! chan-out [ev change-apperture])))
+      
       ;;(listen-dom-evt chan-out target :click update-click-pos)
       ;;(listen-timer chan-out 50 update-visibility-hull)
 
