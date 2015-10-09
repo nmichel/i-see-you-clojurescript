@@ -1,0 +1,15 @@
+div[name='pie_group'] {
+    display: none;
+}
+
+div[name='spot_group'] {
+    display: none;
+}
+
+div[name].visible {
+    display: inline-block;
+}
+
+.slider.slider-horizontal {
+    width: 150px;
+}
