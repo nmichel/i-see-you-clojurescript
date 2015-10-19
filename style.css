@@ -13,3 +13,13 @@ div[name].visible {
 .slider.slider-horizontal {
     width: 150px;
 }
+
+label.btn.btn-primary.active:after {
+    content: " ";
+    white-space: pre;
+}
+
+i:after {
+    content: "   ";
+    white-space: pre;
+}
