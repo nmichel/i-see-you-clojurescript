@@ -261,6 +261,7 @@
    [:label {:class "btn btn-primary active"}
     [:i {:class "fa fa-long-arrow-left"} ]
     [slider (slider-fn :radius)]]
+   [:label {:class "btn label-primary"} (get-in @state [:radius :value])]
    ]
   )
 
@@ -270,9 +271,11 @@
    [:label {:class "btn btn-primary active"}
     [:i {:class "fa fa-undo"} ]
     [slider (slider-fn :angle)]]
+   [:label {:class "btn label-primary"} (get-in @state [:angle :value]) "°"]
    [:label {:class "btn btn-primary active"}
     [:i {:class "fa fa-circle-o-notch"} ]
     [slider (slider-fn :apperture)]]
+   [:label {:class "btn label-primary"} (get-in @state [:apperture :value]) "°"]
    ]
   )
 
