@@ -194,7 +194,7 @@
 (def state (r/atom {:radius    {:id "spot_radius_slider"   :value 50 :min 10 :max 200}
                     :angle     {:id "pie_angle_slider"     :value 10 :min 0  :max 359}
                     :apperture {:id "pie_apperture_slider" :value 30 :min 1  :max 179}
-                    :chan      nil}))
+                    :chan      (chan)}))
 
 (defn comp-fake []
   (fn []
@@ -308,8 +308,7 @@
 
 (defn ^:export init
   []
-  (let [chan-out (chan)]
-    (swap! state assoc :chan chan-out)
+  (let [{chan-out :chan}  @state]
     (r/render [comp-view] (.getElementById js/document "hook"))
     
     (let [target                 (.getElementById js/document "target")
