@@ -293,9 +293,35 @@
   )
 
 (defn- comp-content []
-  [:div
-   [:canvas#target {:width "640" :height "360"}]
-   ]
+  (r/create-class {:component-did-mount
+                   (fn [this]
+                     (let [e (r/dom-node this)]
+                       (doto e
+                         (dommy/set-attr! :tabindex "1000")
+                         (dommy/listen! :keydown (fn [ev]
+                                                   (let [k (.-keyCode ev)
+                                                         shift? (.-shiftKey ev)
+                                                         {{min-r :min max-r :max vr :value} :radius {min-a :min max-a :max va :value} :angle {min-p :min max-p :max vp :value} :apperture} @state]
+                                                     (cond
+                                                      (and (= k 82) shift? (< vr max-r)) (swap! state update-in [:radius :value] inc)
+                                                      (and (= k 82) (> vr min-r))        (swap! state update-in [:radius :value] dec)
+                                                      (and (= k 65) shift? (< va max-a)) (swap! state update-in [:angle :value] inc)
+                                                      (and (= k 65) (> va min-a))        (swap! state update-in [:angle :value] dec)
+                                                      (and (= k 79) shift? (< vp max-p)) (swap! state update-in [:apperture :value] inc)
+                                                      (and (= k 79) (> vp min-p))        (swap! state update-in [:apperture :value] dec)
+                                                      )
+                                                     )
+                                                   ))
+                         )
+                       )
+                     )
+                   :reagent-render
+                   (fn []
+                     [:div
+                      [:canvas#target {:width "640" :height "360"}]]
+                     )
+                   }
+                  )
   )
 
 (defn- comp-view []
