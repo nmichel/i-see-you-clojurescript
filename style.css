@@ -7,9 +7,47 @@ div[name='spot_group'] {
 }
 
 div[name].visible {
-    display: inline-block;
+    display: block;
 }
 
 .slider.slider-horizontal {
     width: 150px;
+}
+
+label.btn.btn-primary.active:after {
+    content: " ";
+    white-space: pre;
+}
+
+i:after {
+    content: "   ";
+    white-space: pre;
+}
+
+#rendering {
+    width: 680px;
+}
+
+#sidebar {
+}
+
+.slide {
+    width: 200px;
+}
+
+.keys, .value {
+    width: 4em;
+}
+
+.keys {
+    margin-right: 10px;
+}
+
+
+.value {
+    margin-left: 10px;
+}
+
+.card:focus {
+    outline: none;
 }

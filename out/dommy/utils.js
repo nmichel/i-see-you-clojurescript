@@ -1,24 +1,24 @@
-// Compiled by ClojureScript 0.0-3211 {}
+// Compiled by ClojureScript 1.7.145 {}
 goog.provide('dommy.utils');
 goog.require('cljs.core');
 /**
  * Dissociate this keyseq from m, removing any empty maps created as a result
  * (including at the top-level).
  */
-dommy.utils.dissoc_in = (function dommy$utils$dissoc_in(m,p__24568){
-var vec__24570 = p__24568;
-var k = cljs.core.nth.call(null,vec__24570,(0),null);
-var ks = cljs.core.nthnext.call(null,vec__24570,(1));
+dommy.utils.dissoc_in = (function dommy$utils$dissoc_in(m,p__11756){
+var vec__11758 = p__11756;
+var k = cljs.core.nth.call(null,vec__11758,(0),null);
+var ks = cljs.core.nthnext.call(null,vec__11758,(1));
 if(cljs.core.truth_(m)){
-var temp__4124__auto__ = (function (){var and__16131__auto__ = ks;
-if(cljs.core.truth_(and__16131__auto__)){
+var temp__4423__auto__ = (function (){var and__4557__auto__ = ks;
+if(cljs.core.truth_(and__4557__auto__)){
 return dommy$utils$dissoc_in.call(null,m.call(null,k),ks);
 } else {
-return and__16131__auto__;
+return and__4557__auto__;
 }
 })();
-if(cljs.core.truth_(temp__4124__auto__)){
-var res = temp__4124__auto__;
+if(cljs.core.truth_(temp__4423__auto__)){
+var res = temp__4423__auto__;
 return cljs.core.assoc.call(null,m,k,res);
 } else {
 var res = cljs.core.dissoc.call(null,m,k);
@@ -41,9 +41,9 @@ return Array.prototype.slice.call(array_like);
  */
 dommy.utils.as_str = (function dommy$utils$as_str(s){
 if((s instanceof cljs.core.Keyword)){
-return [cljs.core.str((function (){var G__24572 = cljs.core.namespace.call(null,s);
-var G__24572__$1 = (((G__24572 == null))?null:[cljs.core.str(G__24572),cljs.core.str("/")].join(''));
-return G__24572__$1;
+return [cljs.core.str((function (){var G__11760 = cljs.core.namespace.call(null,s);
+var G__11760__$1 = (((G__11760 == null))?null:[cljs.core.str(G__11760),cljs.core.str("/")].join(''));
+return G__11760__$1;
 })()),cljs.core.str(cljs.core.name.call(null,s))].join('');
 } else {
 return s;
@@ -54,8 +54,8 @@ return s;
  * only will be used when Element::classList doesn't exist
  */
 dommy.utils.class_match_QMARK_ = (function dommy$utils$class_match_QMARK_(class_name,class$,idx){
-var and__16131__auto__ = ((idx === (0))) || ((" " === class_name.charAt((idx - (1)))));
-if(and__16131__auto__){
+var and__4557__auto__ = ((idx === (0))) || ((" " === class_name.charAt((idx - (1)))));
+if(and__4557__auto__){
 var total_len = class_name.length;
 var stop = (idx + class$.length);
 if((stop <= total_len)){
@@ -64,12 +64,12 @@ return ((stop === total_len)) || ((" " === class_name.charAt(stop)));
 return null;
 }
 } else {
-return and__16131__auto__;
+return and__4557__auto__;
 }
 });
 /**
  * Finds the index of class in a space-delimited class-name
- * only will be used when Element::classList doesn't exist
+ *  only will be used when Element::classList doesn't exist
  */
 dommy.utils.class_index = (function dommy$utils$class_index(class_name,class$){
 var start_from = (0);
@@ -79,8 +79,8 @@ if((i >= (0))){
 if(dommy.utils.class_match_QMARK_.call(null,class_name,class$,i)){
 return i;
 } else {
-var G__24573 = (i + class$.length);
-start_from = G__24573;
+var G__11761 = (i + class$.length);
+start_from = G__11761;
 continue;
 }
 } else {
@@ -93,13 +93,13 @@ dommy.utils.remove_class_str = (function dommy$utils$remove_class_str(init_class
 var class_name = init_class_name;
 while(true){
 var class_len = class_name.length;
-var temp__4124__auto__ = dommy.utils.class_index.call(null,class_name,class$);
-if(cljs.core.truth_(temp__4124__auto__)){
-var i = temp__4124__auto__;
-var G__24574 = (function (){var end = (i + class$.length);
+var temp__4423__auto__ = dommy.utils.class_index.call(null,class_name,class$);
+if(cljs.core.truth_(temp__4423__auto__)){
+var i = temp__4423__auto__;
+var G__11762 = (function (){var end = (i + class$.length);
 return [cljs.core.str((((end < class_len))?[cljs.core.str(class_name.substring((0),i)),cljs.core.str(class_name.substr((end + (1))))].join(''):class_name.substring((0),(i - (1)))))].join('');
 })();
-class_name = G__24574;
+class_name = G__11762;
 continue;
 } else {
 return class_name;

@@ -441,7 +441,8 @@
   the sequences of surface defining the visibility hull
   "
   [alpha apperture o dist [_ _ segments]]
-  (let [segs (->> segments
+  (let [alpha (+ alpha 0.0000537) ;; MAGIC number ! Avoid planets alignement in demo :D
+        segs (->> segments
                   (remove (partial is-segment-outside-pie-piece? o alpha apperture))
                   (filter (partial is-segment-near-point? o dist))
                   (map (partial trim-segment-by-circle (g2d/circle o dist)))

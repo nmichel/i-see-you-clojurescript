@@ -7,54 +7,8 @@
         <link rel="stylesheet" type="text/css" href="style.css"></link>
     </head>
     <body onload="cljs_intro.web.init();">
-        <div class="container-fluid">
-            <nav class="navbar navbar-dark bg-inverse">
-                <span class="navbar-brand">cljs 2D</span>
-                <div class="btn-group" data-toggle="buttons">
-                    <label class="btn label-default">
-                        Algorithm
-                    </label>
-                    <label class="btn btn-primary active" id="algo_global" >
-                        <i class="fa fa-square"></i> <input type="radio" name="global" checked>Global
-                    </label>
-                    <label class="btn btn-primary" id="algo_spot">
-                        <i class="fa  fa-circle"></i> <input type="radio" name="spot">Spot
-                    </label>
-                    <label class="btn btn-primary" id="algo_pie">
-                        <i class="fa fa-pie-chart"></i> <input type="radio" name="pie">Pie
-                    </label>
-                </div>
-
-                <div class="btn-group" data-toggle="buttons" name="parameter_group">
-                    <label class="btn label-default">Controls</label>
-                    <div class="btn-group" data-toggle="buttons" name="spot_group">
-                        <label class="btn label-success">
-                            Spot
-                        </label>
-                        <label class="btn btn-primary active" id="spot_radius">
-                            <i class="fa fa-long-arrow-left"></i> <input id="spot_radius_slider" name="radius" data-slider-min="10" data-slider-max="300" data-slider-step="1" data-slider-value="100">
-                        </label>
-                    </div>
-
-                    <div class="btn-group" data-toggle="buttons" name="pie_group">
-                        <label class="btn label-success">
-                            Pie
-                        </label>
-                        <label class="btn btn-primary active" id="pie_angle">
-                            <i class="fa fa-undo"></i> <input id="pie_angle_slider" name="angle" data-slider-min="0" data-slider-max="359" data-slider-step="1" data-slider-value="90">
-                        </label>
-                        <label class="btn btn-primary active" id="pie_apperture">
-                            <i class="fa fa-circle-o-notch"></i> <input id="pie_apperture_slider" name="apperture" data-slider-min="1" data-slider-max="179" data-slider-step="1" data-slider-value="20">
-                        </label>
-                    </div>
-                </div>
-            </nav>
-            <div>
-                <canvas id="target" width="640" height="360">
-                    Your browser does not support the HTML5 canvas tag.
-                </canvas>
-            </div>
-        </div>
+      <div id="hook">
+      </div>
     </body>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.js"></script>
