@@ -7,7 +7,7 @@ div[name='spot_group'] {
 }
 
 div[name].visible {
-    display: inline-block;
+    display: block;
 }
 
 .slider.slider-horizontal {
@@ -23,3 +23,81 @@ i:after {
     content: "   ";
     white-space: pre;
 }
+
+#rendering {
+    width: 680px;
+}
+
+#sidebar {
+}
+
+.slide {
+    width: 200px;
+}
+
+.keys, .value {
+    width: 4em;
+}
+
+.keys {
+    margin-right: 10px;
+}
+
+
+.value {
+    margin-left: 10px;
+}
+
+.card:focus {
+    outline: none;
+}
+
+.table {
+    display: table;
+}
+
+.row {
+    background-color: lightgray;
+    display: table-row;
+}
+
+.cell {
+    display: table-cell;
+}
+
+label.btn.btn-primary.debug {
+    margin-bottom: 0;
+    margin-left: 1em;
+    border-radius: 0;
+    box-shadow: 0 0 10px 0px black;
+}
+
+label.btn.btn-primary.debug:after {
+    content: " ";
+    white-space: pre;
+}
+
+div.table.debug div.row .cell{
+    vertical-align: middle;
+}
+
+div.table.debug div.row div.cell:first-child {
+    width: 5em;
+}
+
+div.table.debug div.row div.cell:first-child i:after {
+    content: "";
+}
+
+div.table.debug div.row:first-child label.debug {
+    border-top-left-radius: 0.25em;
+    border-top-right-radius: 0.25em;
+    margin-top: 10px;
+}
+
+div.table.debug div.row:last-child label.debug {
+    border-bottom-left-radius: 0.25em;
+    border-bottom-right-radius: 0.25em;
+    margin-bottom: 10px;
+}
+

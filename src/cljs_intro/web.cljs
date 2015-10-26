@@ -237,9 +237,38 @@
                          [:input { :id id}]))})
     ))
 
+(defn- comp-spot-param []
+  [:div {:name "spot_group"}
+   [:label {:class "keys btn label-primary"} "r | R"]
+   [:label {:class "slide btn btn-primary active"}
+    [:i {:class "fa fa-long-arrow-left"} ]
+    [slider (slider-fn :radius)]]
+   [:label {:class "value btn label-primary"} (get-in @state [:radius :value])]
+   ]
+  )
+
+(defn- comp-pie-param []
+  [:div {:name "pie_group"}
+   [:div
+    [:label {:class "keys btn label-primary"} "a | A"]
+    [:label {:class "slide btn btn-primary active"}
+     [:i {:class "fa fa-undo"} ]
+     [slider (slider-fn :angle)]]
+    [:label {:class "value btn label-primary"} (get-in @state [:angle :value]) "°"]
+    ]
+
+   [:div
+    [:label {:class "keys btn label-primary"} "o | O"]
+    [:label {:class "slide btn btn-primary active"}
+     [:i {:class "fa fa-circle-o-notch"} ]
+     [slider (slider-fn :apperture)]]
+    [:label {:class "value btn label-primary"} (get-in @state [:apperture :value]) "°"]
+    ]
+   ]
+  )
+
 (defn- comp-algo []
   [:div.btn-group {:data-toggle "buttons"}
-   [:label {:class "btn label-default"} "Algorithm"]
    [:label#algo_global {:class "btn btn-primary active"}
     [:i {:class "fa fa-square"}]
     [:input {:type "radio" :name "global" :checked true}]"Global"
@@ -255,43 +284,55 @@
    ]
   )
 
-(defn- comp-spot-param []
-  [:div.btn-group {:name "spot_group" :data-toggle "buttons"}
-   [:label {:class "btn label-success"} "Spot"]
-   [:label {:class "btn btn-primary active"}
-    [:i {:class "fa fa-long-arrow-left"} ]
-    [slider (slider-fn :radius)]]
-   [:label {:class "btn label-primary"} (get-in @state [:radius :value])]
+(defn- comp-sidebar-control []
+  [:div#sidebar {:class "card"}
+   [:div.card-block
+    [:h2.card-header [:i {:class "fa fa-cogs"}] "Controls"]
+    [:h5.card-header "Algorithm"]
+    [comp-algo]
+    [:h5.card-header "Parameters"]
+    [comp-spot-param]
+    [comp-pie-param]
+    ]
    ]
   )
 
-(defn- comp-pie-param []
-  [:div.btn-group {:name "pie_group" :data-toggle "buttons"}
-   [:label {:class "btn label-success"} "Pie"]
-   [:label {:class "btn btn-primary active"}
-    [:i {:class "fa fa-undo"} ]
-    [slider (slider-fn :angle)]]
-   [:label {:class "btn label-primary"} (get-in @state [:angle :value]) "°"]
-   [:label {:class "btn btn-primary active"}
-    [:i {:class "fa fa-circle-o-notch"} ]
-    [slider (slider-fn :apperture)]]
-   [:label {:class "btn label-primary"} (get-in @state [:apperture :value]) "°"]
-   ]
-  )
+(defn- comp-sidebar-debug []
+  [:div#sidebar {:class "card"}
+   [:div.card-block
+    [:h2.card-header [:i {:class "fa fa-bug"}] "Debug"]
+    [:div.table.debug
+     [:div.row.btn-secondary
+      [:div.btn-group.cell {:data-toggle "buttons"}
+       [:label {:class "btn btn-primary debug"}
+        [:input {:type "checkbox" :autocomplete "off"} [:i {:class "fa fa-check"}]]]
+       ]
+      [:label.cell  "endpoints"]
+      ]
 
-(defn- comp-algo-param []
-  [:div.btn-group {:name "parameter_group" :data-toggle "buttons"}
-   [:label {:class "btn label-default"} "controls"]
-   [comp-spot-param]
-   [comp-pie-param]
+     [:div.row.btn-secondary
+      [:div.btn-group.cell {:data-toggle "buttons"}
+       [:label {:class "btn btn-primary debug"}
+        [:input {:type "checkbox" :autocomplete "off"} [:i {:class "fa fa-check"}]]]
+       ]
+      [:label.cell "subgeometry"]
+      ]
+
+     [:div.row.btn-secondary
+      [:div.btn-group.cell {:data-toggle "buttons"}
+       [:label {:class "btn btn-primary debug"}
+        [:input {:type "checkbox" :autocomplete "off"} [:i {:class "fa fa-check"}]]]
+       ]
+      [:label.cell "geometry"]
+      ]
+     ]
+    ]
    ]
   )
 
 (defn- comp-menu []
   [:nav {:class "navbar navbar-dark bg-inverse"}
    [:span {:class "navbar-brand"} "cljs 2D"]
-   [comp-algo]
-   [comp-algo-param]
    ]
   )
 
@@ -306,22 +347,28 @@
                                                          shift? (.-shiftKey ev)
                                                          {{min-r :min max-r :max vr :value} :radius {min-a :min max-a :max va :value} :angle {min-p :min max-p :max vp :value} :apperture} @state]
                                                      (cond
-                                                      (and (= k 82) shift? (< vr max-r)) (swap! state update-in [:radius :value] inc)
-                                                      (and (= k 82) (> vr min-r))        (swap! state update-in [:radius :value] dec)
-                                                      (and (= k 65) shift? (< va max-a)) (swap! state update-in [:angle :value] inc)
-                                                      (and (= k 65) (> va min-a))        (swap! state update-in [:angle :value] dec)
-                                                      (and (= k 79) shift? (< vp max-p)) (swap! state update-in [:apperture :value] inc)
-                                                      (and (= k 79) (> vp min-p))        (swap! state update-in [:apperture :value] dec)
+                                                      (and (= k 82) shift?) (when (< vr max-r) (swap! state update-in [:radius :value] inc))
+                                                      (= k 82)              (when (> vr min-r) (swap! state update-in [:radius :value] dec))
+                                                      (and (= k 65) shift?) (when (< va max-a) (swap! state update-in [:angle :value] inc))
+                                                      (= k 65)              (when (> va min-a) (swap! state update-in [:angle :value] dec))
+                                                      (and (= k 79) shift?) (when (< vp max-p) (swap! state update-in [:apperture :value] inc))
+                                                      (= k 79)              (when (> vp min-p) (swap! state update-in [:apperture :value] dec))
                                                       )
                                                      )
                                                    ))
+                         (dommy/listen! :mouseover (fn [ev] (.focus e)))
                          )
                        )
                      )
                    :reagent-render
                    (fn []
-                     [:div
-                      [:canvas#target {:width "640" :height "360"}]]
+                     [:div#rendering {:class "card"}
+                      [:div {:class "card-block"}
+                       [:div.card-text
+                        [:canvas#target {:width "640px" :height "360px"}]
+                        ]
+                       ]
+                      ]
                      )
                    }
                   )
@@ -330,7 +377,11 @@
 (defn- comp-view []
   [:div.container-fluid
    [comp-menu]
-   [comp-content]
+   [:div.card-group
+    [comp-content]
+    [comp-sidebar-control]
+    [comp-sidebar-debug]
+    ]
    [comp-fake]
    ]
   )
