@@ -441,7 +441,8 @@
   the sequences of surface defining the visibility hull
   "
   [alpha apperture o dist [_ _ segments]]
-  (let [segs (->> segments
+  (let [alpha (+ alpha 0.0000537) ;; MAGIC number ! Avoid planets alignement in demo :D
+        segs (->> segments
                   (remove (partial is-segment-outside-pie-piece? o alpha apperture))
                   (filter (partial is-segment-near-point? o dist))
                   (map (partial trim-segment-by-circle (g2d/circle o dist)))
@@ -449,15 +450,17 @@
                   (remove (partial is-segment-outside-pie-piece? o alpha apperture))
                   (mapcat (partial trim-segment-by-angle o dist alpha apperture))
                   (remove nil?))
-        eps (build-endpoint-list segs)]
+        eps (->> (build-endpoint-list segs)
+                 (core/sort-endpoints-by-angle o)
+                 (core/group-endpoints-by-angle)
+                 (merge-angle-sorted-endpoints)
+                 (rebase-angle-sorted-endpoints alpha apperture)
+                 (sort-angle-sorted-endpoints)
+                 (compute-hull-vertices alpha apperture o dist segs))
+        surfs (compute-hull-surfaces o dist eps)]
 
-    (->>
-     (core/sort-endpoints-by-angle o eps)
-     (core/group-endpoints-by-angle)
-     (merge-angle-sorted-endpoints)
-     (rebase-angle-sorted-endpoints alpha apperture)
-     (sort-angle-sorted-endpoints)
-     (compute-hull-vertices alpha apperture o dist segs)
-     (compute-hull-surfaces o dist)
-     (conj [segs]))
-    ))
+    {:endpoints eps 
+     :hull      surfs
+     :subgeom   segs}
+    )
+  )

@@ -96,19 +96,22 @@
   )
 
 (defn- render-game
-  [{:keys [width height segs hull x y context eps dynamic dist alpha apperture algo] :as state}]
-  (let [[drawdata eps _allsegs] dynamic
+  [{:keys [width height segs eps hull x y context dynamic dist alpha apperture algo]}]
+  (let [[drawdata _ _allsegs] dynamic
         o                       (g2d/vec2d x y)
         erase-color             "grey"]
     (draw/draw-rect context 0 0 width height erase-color)
-    (draw/draw-geometry context drawdata)
-    (draw/draw-segments context segs)
+    (if (get-in @state [:debug :show-geom])
+      (draw/draw-geometry context drawdata))
+    (if (get-in @state [:debug :show-sub-geom])
+      (draw/draw-segments context segs))
     (draw/draw-hull-as-surfaces context hull)
     (cond
      (= algo :pie) (draw/draw-pie context x y dist (-> (- alpha apperture) (g2d/-pi+pi->0+2pi)) (-> (+ alpha apperture) (g2d/-pi+pi->0+2pi)))
      (= algo :spot) (draw/draw-circle context x y dist)
      )
-    ;;(draw/draw-endpoints context eps)
+    (if (get-in @state [:debug :show-ep])
+      (draw/draw-hull-vertices context eps))
     (draw/draw-point context o "lightblue")
     ))
 
@@ -182,10 +185,11 @@
   [{:keys [static x y r-geom dist alpha apperture] :as state}]
   (let [data          static ;; data (build-data static r-geom alpha)
         visibility-fn (get-compute-visibility-hull-function state)
-        [segs hull]   (visibility-fn data)]
+        {:keys [subgeom hull endpoints]} (visibility-fn data)]
 
     (assoc state
-      :segs segs
+      :segs subgeom
+      :eps endpoints
       :hull hull
       :dynamic data
 ;;      :alpha (+ alpha (/ Math/PI 20))
