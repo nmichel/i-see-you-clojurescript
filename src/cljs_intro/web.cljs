@@ -141,20 +141,23 @@
        ))
 
 (defn- change-algo
-  [k ev state]
+  [k ev s]
   (let [algo k]
     (cond
      (= :global algo) (do
                         (dommy/remove-class! (dommy/sel1 "div[name='spot_group']") "visible")
-                        (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+                        (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible")
+                        (swap! state assoc-in [:algo] :global))
      (= :spot algo) (do
                       (dommy/add-class! (dommy/sel1 "div[name='spot_group']") "visible")
-                       (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+                      (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible")
+                      (swap! state assoc-in [:algo] :spot))
      (= :pie algo) (do
                      (dommy/add-class! (dommy/sel1 "div[name='spot_group']") "visible")
-                     (dommy/add-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+                     (dommy/add-class! (dommy/sel1 "div[name='pie_group']") "visible")
+                     (swap! state assoc-in [:algo] :pie))
      ))
-  (-> (assoc state :algo k)
+  (-> (assoc s :algo k)
       update-visibility-hull))
 
 (defn- change-radius
@@ -251,7 +254,7 @@
     ))
 
 (defn- comp-spot-param []
-  [:div {:name "spot_group"}
+  [:div.btn-group {:name "spot_group"}
    [:label {:class "keys btn label-primary"} "r | R"]
    [:label {:class "slide btn btn-primary active"}
     [:i {:class "fa fa-long-arrow-left"} ]
@@ -262,7 +265,7 @@
 
 (defn- comp-pie-param []
   [:div {:name "pie_group"}
-   [:div
+   [:div.btn-group
     [:label {:class "keys btn label-primary"} "a | A"]
     [:label {:class "slide btn btn-primary active"}
      [:i {:class "fa fa-undo"} ]
@@ -270,7 +273,7 @@
     [:label {:class "value btn label-primary"} (get-in @state [:angle :value]) "°"]
     ]
 
-   [:div
+   [:div.btn-group
     [:label {:class "keys btn label-primary"} "o | O"]
     [:label {:class "slide btn btn-primary active"}
      [:i {:class "fa fa-circle-o-notch"} ]
@@ -282,15 +285,15 @@
 
 (defn- comp-algo []
   [:div.btn-group {:data-toggle "buttons"}
-   [:label#algo_global {:class "btn btn-primary active"}
+   [:label#algo_global {:class (str "btn btn-primary" (if (= (get-in @state [:algo]) :global) " active"))}
     [:i {:class "fa fa-square"}]
-    [:input {:type "radio" :name "global" :checked true}]"Global"
+    [:input {:type "radio" :name "global"}]"Global"
     ]
-   [:label#algo_spot {:class "btn btn-primary"}
+   [:label#algo_spot {:class (str "btn btn-primary" (if (= (get-in @state [:algo]) :spot) " active"))}
     [:i {:class "fa fa-circle"}]
     [:input {:type "radio" :name "spot"}]"Spot"
     ]
-   [:label#algo_pie {:class "btn btn-primary"}
+   [:label#algo_pie {:class (str "btn btn-primary" (if (= (get-in @state [:algo]) :pie) " active"))}
     [:i {:class "fa fa-pie-chart"}]
     [:input {:type "radio" :name "pie"}]"Pie"
     ]
@@ -313,7 +316,7 @@
 (defn- comp-debug-check [f]
   (fn []
     (let [v (f)]
-      [:label {:class (str "btn btn-primary debug" (if v " active"))
+      [:label {:class (str "btn btn-warning debug" (if v " active"))
                :on-click (fn []
                            (f (not v)))
                }

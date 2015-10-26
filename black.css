@@ -1,0 +1,35 @@
+nav.bg-inverse {
+    background-color: #2D2D2D;
+    border-radius: 0;
+}
+
+.card {
+    background-color: #191919;
+    border: none;
+    border-radius: 0;
+}
+
+.card-header {
+    color: white;
+    border-bottom: none;
+    background-color: #2D2D2D;
+}
+
+.btn-group .btn + .btn {
+    margin-left: 0;
+}
+
+.btn.btn-primary {
+    border-bottom-color: #004784;
+    border-right-color: #004784;
+    border-top-color: #1D97FF;
+    border-left-color: #1D97FF;
+}
+
+.keys, .slide, .value {
+    color: white;
+    border-bottom-color: #004784;
+    border-right-color: #004784;
+    border-top-color: #1D97FF;
+    border-left-color: #1D97FF;    
+}

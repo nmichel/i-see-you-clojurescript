@@ -1,3 +1,7 @@
+body {
+    background: url("./texture.png")
+}
+
 div[name='pie_group'] {
     display: none;
 }
@@ -14,7 +18,12 @@ div[name].visible {
     width: 150px;
 }
 
-label.btn.btn-primary.active:after {
+.slide:after {
+    content: " ";
+    white-space: pre;
+}
+
+label.btn.btn-warning.active:after {
     content: " ";
     white-space: pre;
 }
@@ -40,7 +49,7 @@ i:after {
 }
 
 .keys {
-    margin-right: 10px;
+/*    margin-right: 10px; */
 }
 
 
@@ -57,7 +66,8 @@ i:after {
 }
 
 .row {
-    background-color: lightgray;
+    background-color: #2D2D2D;
+    color: white;
     display: table-row;
 }
 
@@ -65,15 +75,15 @@ i:after {
     display: table-cell;
 }
 
-label.btn.btn-primary.debug {
+label.btn.btn-warning.debug {
     margin-bottom: 0;
     margin-left: 1em;
     border-radius: 0;
-    box-shadow: 0 0 10px 0px black;
     width: 3.5em;
+    border-color: #FFB836 #AB6F00 #AB6F00 #FFB834;
 }
 
-label.btn.btn-primary.debug:after {
+label.btn.btn-warning.debug:after {
     content: " ";
     white-space: pre;
 }
@@ -91,12 +101,14 @@ div.table.debug div.row div.cell:first-child i:after {
 }
 
 div.table.debug div.row:first-child label.debug {
+    border-color: #FFB834 #AB6F00 #B97800 #FFB834;
     border-top-left-radius: 0.25em;
     border-top-right-radius: 0.25em;
     margin-top: 10px;
 }
 
 div.table.debug div.row:last-child label.debug {
+    border-color: #FFB836 #AB6F00 #AB6F00 #FFB834;
     border-bottom-left-radius: 0.25em;
     border-bottom-right-radius: 0.25em;
     margin-bottom: 10px;
