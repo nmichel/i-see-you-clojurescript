@@ -194,7 +194,10 @@
 (def state (r/atom {:radius    {:id "spot_radius_slider"   :value 50 :min 10 :max 200}
                     :angle     {:id "pie_angle_slider"     :value 10 :min 0  :max 359}
                     :apperture {:id "pie_apperture_slider" :value 30 :min 1  :max 179}
-                    :chan      (chan)}))
+                    :chan      (chan)
+                    :debug {:show-ep       true
+                            :show-geom     false
+                            :show-sub-geom false}}))
 
 (defn comp-fake []
   (fn []
@@ -209,6 +212,12 @@
   (fn
     ([]    (name @state))
     ([k v] (swap! state assoc-in [name k] v)))
+  )
+
+(defn debug-fn [path]
+  (fn
+    ([]  (get-in @state path))
+    ([v] (swap! state assoc-in path v)))
   )
 
 (defn slider [f]
@@ -297,6 +306,19 @@
    ]
   )
 
+(defn- comp-debug-check [f]
+  (fn []
+    (let [v (f)]
+      [:label {:class (str "btn btn-primary debug" (if v " active"))
+               :on-click (fn []
+                           (f (not v)))
+               }
+       [:input {:type "checkbox"}
+        [:i {:class (str  "fa " (if v "fa-check" "fa-times"))}]]]
+      )
+    )
+  )
+
 (defn- comp-sidebar-debug []
   [:div#sidebar {:class "card"}
    [:div.card-block
@@ -304,24 +326,21 @@
     [:div.table.debug
      [:div.row.btn-secondary
       [:div.btn-group.cell {:data-toggle "buttons"}
-       [:label {:class "btn btn-primary debug"}
-        [:input {:type "checkbox" :autocomplete "off"} [:i {:class "fa fa-check"}]]]
+       [comp-debug-check (debug-fn [:debug :show-ep])]
        ]
       [:label.cell  "endpoints"]
       ]
 
      [:div.row.btn-secondary
       [:div.btn-group.cell {:data-toggle "buttons"}
-       [:label {:class "btn btn-primary debug"}
-        [:input {:type "checkbox" :autocomplete "off"} [:i {:class "fa fa-check"}]]]
+       [comp-debug-check (debug-fn [:debug :show-sub-geom])]
        ]
       [:label.cell "subgeometry"]
       ]
 
      [:div.row.btn-secondary
       [:div.btn-group.cell {:data-toggle "buttons"}
-       [:label {:class "btn btn-primary debug"}
-        [:input {:type "checkbox" :autocomplete "off"} [:i {:class "fa fa-check"}]]]
+       [comp-debug-check (debug-fn [:debug :show-geom])]
        ]
       [:label.cell "geometry"]
       ]

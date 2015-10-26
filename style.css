@@ -70,6 +70,7 @@ label.btn.btn-primary.debug {
     margin-left: 1em;
     border-radius: 0;
     box-shadow: 0 0 10px 0px black;
+    width: 3.5em;
 }
 
 label.btn.btn-primary.debug:after {
