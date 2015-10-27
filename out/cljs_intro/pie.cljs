@@ -450,15 +450,17 @@
                   (remove (partial is-segment-outside-pie-piece? o alpha apperture))
                   (mapcat (partial trim-segment-by-angle o dist alpha apperture))
                   (remove nil?))
-        eps (build-endpoint-list segs)]
+        eps (->> (build-endpoint-list segs)
+                 (core/sort-endpoints-by-angle o)
+                 (core/group-endpoints-by-angle)
+                 (merge-angle-sorted-endpoints)
+                 (rebase-angle-sorted-endpoints alpha apperture)
+                 (sort-angle-sorted-endpoints)
+                 (compute-hull-vertices alpha apperture o dist segs))
+        surfs (compute-hull-surfaces o dist eps)]
 
-    (->>
-     (core/sort-endpoints-by-angle o eps)
-     (core/group-endpoints-by-angle)
-     (merge-angle-sorted-endpoints)
-     (rebase-angle-sorted-endpoints alpha apperture)
-     (sort-angle-sorted-endpoints)
-     (compute-hull-vertices alpha apperture o dist segs)
-     (compute-hull-surfaces o dist)
-     (conj [segs]))
-    ))
+    {:endpoints eps 
+     :hull      surfs
+     :subgeom   segs}
+    )
+  )

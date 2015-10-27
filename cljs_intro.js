@@ -1,14 +1,12 @@
 goog.addDependency("base.js", ['goog'], []);
 goog.addDependency("../cljs/core.js", ['cljs.core'], ['goog.string', 'goog.object', 'goog.string.StringBuffer', 'goog.array']);
-goog.addDependency("../clojure/string.js", ['clojure.string'], ['goog.string', 'cljs.core', 'goog.string.StringBuffer']);
 goog.addDependency("../cljs_intro/g2d.js", ['cljs_intro.g2d'], ['cljs.core']);
-goog.addDependency("../cljs_intro/core.js", ['cljs_intro.core'], ['cljs.core', 'clojure.string', 'cljs_intro.g2d']);
-goog.addDependency("../cljs_intro/pie.js", ['cljs_intro.pie'], ['cljs.core', 'cljs_intro.core', 'cljs_intro.g2d']);
 goog.addDependency("../cljs/core/async/impl/protocols.js", ['cljs.core.async.impl.protocols'], ['cljs.core']);
 goog.addDependency("../cljs/core/async/impl/ioc_helpers.js", ['cljs.core.async.impl.ioc_helpers'], ['cljs.core', 'cljs.core.async.impl.protocols']);
 goog.addDependency("../cljs/core/async/impl/buffers.js", ['cljs.core.async.impl.buffers'], ['cljs.core', 'cljs.core.async.impl.protocols']);
 goog.addDependency("../cljs/core/async/impl/dispatch.js", ['cljs.core.async.impl.dispatch'], ['cljs.core', 'cljs.core.async.impl.buffers', 'goog.async.nextTick']);
 goog.addDependency("../cljs/core/async/impl/channels.js", ['cljs.core.async.impl.channels'], ['cljs.core.async.impl.dispatch', 'cljs.core', 'cljs.core.async.impl.buffers', 'cljs.core.async.impl.protocols']);
+goog.addDependency("../clojure/string.js", ['clojure.string'], ['goog.string', 'cljs.core', 'goog.string.StringBuffer']);
 goog.addDependency("../figwheel/client/utils.js", ['figwheel.client.utils'], ['cljs.core', 'clojure.string']);
 goog.addDependency("../cljs/reader.js", ['cljs.reader'], ['goog.string', 'cljs.core', 'goog.string.StringBuffer']);
 goog.addDependency("../figwheel/client/socket.js", ['figwheel.client.socket'], ['cljs.core', 'figwheel.client.utils', 'cljs.reader']);
@@ -17,6 +15,7 @@ goog.addDependency("../cljs/core/async/impl/timers.js", ['cljs.core.async.impl.t
 goog.addDependency("../cljs/core/async.js", ['cljs.core.async'], ['cljs.core.async.impl.channels', 'cljs.core.async.impl.dispatch', 'cljs.core', 'cljs.core.async.impl.buffers', 'cljs.core.async.impl.protocols', 'cljs.core.async.impl.ioc_helpers', 'cljs.core.async.impl.timers']);
 goog.addDependency("../clojure/set.js", ['clojure.set'], ['cljs.core']);
 goog.addDependency("../figwheel/client/file_reloading.js", ['figwheel.client.file_reloading'], ['goog.string', 'goog.net.jsloader', 'goog.Uri', 'cljs.core', 'goog.object', 'cljs.core.async', 'clojure.set', 'figwheel.client.utils', 'clojure.string']);
+goog.addDependency("../cljs_intro/core.js", ['cljs_intro.core'], ['cljs.core', 'clojure.string', 'cljs_intro.g2d']);
 goog.addDependency("../cljs_intro/trim.js", ['cljs_intro.trim'], ['cljs.core', 'cljs_intro.core', 'cljs_intro.g2d']);
 goog.addDependency("../dommy/utils.js", ['dommy.utils'], ['cljs.core']);
 goog.addDependency("../dommy/core.js", ['dommy.core'], ['cljs.core', 'dommy.utils', 'clojure.string']);
@@ -31,6 +30,7 @@ goog.addDependency("../reagent/impl/template.js", ['reagent.impl.template'], ['r
 goog.addDependency("../reagent/core.js", ['reagent.core'], ['reagent.impl.util', 'reagent.interop', 'reagent.ratom', 'cljs.core', 'cljsjs.react', 'reagent.impl.template', 'reagent.impl.batching', 'reagent.impl.component', 'reagent.debug']);
 goog.addDependency("../cljs_intro/spot.js", ['cljs_intro.spot'], ['cljs.core', 'cljs_intro.core', 'cljs_intro.g2d']);
 goog.addDependency("../cljs_intro/draw.js", ['cljs_intro.draw'], ['cljs.core', 'cljs_intro.core', 'cljs_intro.g2d']);
+goog.addDependency("../cljs_intro/pie.js", ['cljs_intro.pie'], ['cljs.core', 'cljs_intro.core', 'cljs_intro.g2d']);
 goog.addDependency("../cljs_intro/data.js", ['cljs_intro.data'], ['cljs.core']);
 goog.addDependency("../cljs_intro/global.js", ['cljs_intro.global'], ['cljs.core', 'cljs_intro.core', 'cljs_intro.g2d']);
 goog.addDependency("../cljs_intro/web.js", ['cljs_intro.web'], ['cljs_intro.pie', 'cljs_intro.data', 'reagent.core', 'cljs.core', 'cljs.core.async', 'cljs_intro.global', 'cljs_intro.core', 'cljs_intro.spot', 'cljs_intro.draw', 'dommy.core', 'cljs_intro.g2d']);

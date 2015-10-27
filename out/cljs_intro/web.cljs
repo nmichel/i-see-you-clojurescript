@@ -96,19 +96,22 @@
   )
 
 (defn- render-game
-  [{:keys [width height segs hull x y context eps dynamic dist alpha apperture algo] :as state}]
-  (let [[drawdata eps _allsegs] dynamic
+  [{:keys [width height segs eps hull x y context dynamic dist alpha apperture algo]}]
+  (let [[drawdata _ _allsegs] dynamic
         o                       (g2d/vec2d x y)
         erase-color             "grey"]
     (draw/draw-rect context 0 0 width height erase-color)
-    (draw/draw-geometry context drawdata)
-    (draw/draw-segments context segs)
+    (if (get-in @state [:debug :show-geom])
+      (draw/draw-geometry context drawdata))
+    (if (get-in @state [:debug :show-sub-geom])
+      (draw/draw-segments context segs))
     (draw/draw-hull-as-surfaces context hull)
     (cond
      (= algo :pie) (draw/draw-pie context x y dist (-> (- alpha apperture) (g2d/-pi+pi->0+2pi)) (-> (+ alpha apperture) (g2d/-pi+pi->0+2pi)))
      (= algo :spot) (draw/draw-circle context x y dist)
      )
-    ;;(draw/draw-endpoints context eps)
+    (if (get-in @state [:debug :show-ep])
+      (draw/draw-hull-vertices context eps))
     (draw/draw-point context o "lightblue")
     ))
 
@@ -138,20 +141,23 @@
        ))
 
 (defn- change-algo
-  [k ev state]
+  [k ev s]
   (let [algo k]
     (cond
      (= :global algo) (do
                         (dommy/remove-class! (dommy/sel1 "div[name='spot_group']") "visible")
-                        (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+                        (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible")
+                        (swap! state assoc-in [:algo] :global))
      (= :spot algo) (do
                       (dommy/add-class! (dommy/sel1 "div[name='spot_group']") "visible")
-                       (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+                      (dommy/remove-class! (dommy/sel1 "div[name='pie_group']") "visible")
+                      (swap! state assoc-in [:algo] :spot))
      (= :pie algo) (do
                      (dommy/add-class! (dommy/sel1 "div[name='spot_group']") "visible")
-                     (dommy/add-class! (dommy/sel1 "div[name='pie_group']") "visible"))
+                     (dommy/add-class! (dommy/sel1 "div[name='pie_group']") "visible")
+                     (swap! state assoc-in [:algo] :pie))
      ))
-  (-> (assoc state :algo k)
+  (-> (assoc s :algo k)
       update-visibility-hull))
 
 (defn- change-radius
@@ -182,10 +188,11 @@
   [{:keys [static x y r-geom dist alpha apperture] :as state}]
   (let [data          static ;; data (build-data static r-geom alpha)
         visibility-fn (get-compute-visibility-hull-function state)
-        [segs hull]   (visibility-fn data)]
+        {:keys [subgeom hull endpoints]} (visibility-fn data)]
 
     (assoc state
-      :segs segs
+      :segs subgeom
+      :eps endpoints
       :hull hull
       :dynamic data
 ;;      :alpha (+ alpha (/ Math/PI 20))
@@ -194,7 +201,10 @@
 (def state (r/atom {:radius    {:id "spot_radius_slider"   :value 50 :min 10 :max 200}
                     :angle     {:id "pie_angle_slider"     :value 10 :min 0  :max 359}
                     :apperture {:id "pie_apperture_slider" :value 30 :min 1  :max 179}
-                    :chan      (chan)}))
+                    :chan      (chan)
+                    :debug {:show-ep       true
+                            :show-geom     false
+                            :show-sub-geom false}}))
 
 (defn comp-fake []
   (fn []
@@ -209,6 +219,12 @@
   (fn
     ([]    (name @state))
     ([k v] (swap! state assoc-in [name k] v)))
+  )
+
+(defn debug-fn [path]
+  (fn
+    ([]  (get-in @state path))
+    ([v] (swap! state assoc-in path v)))
   )
 
 (defn slider [f]
@@ -238,7 +254,7 @@
     ))
 
 (defn- comp-spot-param []
-  [:div {:name "spot_group"}
+  [:div.btn-group {:name "spot_group"}
    [:label {:class "keys btn label-primary"} "r | R"]
    [:label {:class "slide btn btn-primary active"}
     [:i {:class "fa fa-long-arrow-left"} ]
@@ -249,7 +265,7 @@
 
 (defn- comp-pie-param []
   [:div {:name "pie_group"}
-   [:div
+   [:div.btn-group
     [:label {:class "keys btn label-primary"} "a | A"]
     [:label {:class "slide btn btn-primary active"}
      [:i {:class "fa fa-undo"} ]
@@ -257,7 +273,7 @@
     [:label {:class "value btn label-primary"} (get-in @state [:angle :value]) "°"]
     ]
 
-   [:div
+   [:div.btn-group
     [:label {:class "keys btn label-primary"} "o | O"]
     [:label {:class "slide btn btn-primary active"}
      [:i {:class "fa fa-circle-o-notch"} ]
@@ -269,29 +285,73 @@
 
 (defn- comp-algo []
   [:div.btn-group {:data-toggle "buttons"}
-   [:label#algo_global {:class "btn btn-primary active"}
+   [:label#algo_global {:class (str "btn btn-primary" (if (= (get-in @state [:algo]) :global) " active"))}
     [:i {:class "fa fa-square"}]
-    [:input {:type "radio" :name "global" :checked true}]"Global"
+    [:input {:type "radio" :name "global"}]"Global"
     ]
-   [:label#algo_spot {:class "btn btn-primary"}
+   [:label#algo_spot {:class (str "btn btn-primary" (if (= (get-in @state [:algo]) :spot) " active"))}
     [:i {:class "fa fa-circle"}]
     [:input {:type "radio" :name "spot"}]"Spot"
     ]
-   [:label#algo_pie {:class "btn btn-primary"}
+   [:label#algo_pie {:class (str "btn btn-primary" (if (= (get-in @state [:algo]) :pie) " active"))}
     [:i {:class "fa fa-pie-chart"}]
     [:input {:type "radio" :name "pie"}]"Pie"
     ]
    ]
   )
 
-(defn- comp-sidebar []
+(defn- comp-sidebar-control []
   [:div#sidebar {:class "card"}
    [:div.card-block
-    [:h4.card-header "Algorithm"]
+    [:h2.card-header [:i {:class "fa fa-cogs"}] "Controls"]
+    [:h5.card-header "Algorithm"]
     [comp-algo]
-    [:h4.card-header "Parameters"]
+    [:h5.card-header "Parameters"]
     [comp-spot-param]
     [comp-pie-param]
+    ]
+   ]
+  )
+
+(defn- comp-debug-check [f]
+  (fn []
+    (let [v (f)]
+      [:label {:class (str "btn btn-warning debug" (if v " active"))
+               :on-click (fn []
+                           (f (not v)))
+               }
+       [:input {:type "checkbox"}
+        [:i {:class (str  "fa " (if v "fa-check" "fa-times"))}]]]
+      )
+    )
+  )
+
+(defn- comp-sidebar-debug []
+  [:div#sidebar {:class "card"}
+   [:div.card-block
+    [:h2.card-header [:i {:class "fa fa-bug"}] "Debug"]
+    [:div.table.debug
+     [:div.row.btn-secondary
+      [:div.btn-group.cell {:data-toggle "buttons"}
+       [comp-debug-check (debug-fn [:debug :show-ep])]
+       ]
+      [:label.cell  "endpoints"]
+      ]
+
+     [:div.row.btn-secondary
+      [:div.btn-group.cell {:data-toggle "buttons"}
+       [comp-debug-check (debug-fn [:debug :show-sub-geom])]
+       ]
+      [:label.cell "subgeometry"]
+      ]
+
+     [:div.row.btn-secondary
+      [:div.btn-group.cell {:data-toggle "buttons"}
+       [comp-debug-check (debug-fn [:debug :show-geom])]
+       ]
+      [:label.cell "geometry"]
+      ]
+     ]
     ]
    ]
   )
@@ -345,7 +405,8 @@
    [comp-menu]
    [:div.card-group
     [comp-content]
-    [comp-sidebar]
+    [comp-sidebar-control]
+    [comp-sidebar-debug]
     ]
    [comp-fake]
    ]

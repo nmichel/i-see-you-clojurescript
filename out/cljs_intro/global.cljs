@@ -205,9 +205,12 @@
   Point are ordered with respect to their polar coordinate."
 
   [o [_ eps segments]]
-  (->> (core/sort-endpoints-by-angle o eps)
-       (core/group-endpoints-by-angle)
-       (compute-hull-vertices o segments)
-       (compute-hull-surfaces o)
-       (conj [segments])
-       ))
+  (let [es (->> (core/sort-endpoints-by-angle o eps)
+                (core/group-endpoints-by-angle)
+                (compute-hull-vertices o segments))
+        surfs (compute-hull-surfaces o es)]
+    {:endpoints es 
+     :hull      surfs
+     :subgeom   segments}
+    )
+  )

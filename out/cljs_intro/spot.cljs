@@ -281,13 +281,15 @@
                   (select-segments o dist)
                   (trim-segments o dist)
                   (remove nil?))
-        eps (build-endpoint-list segs)]
-
-    (->>
-     (core/sort-endpoints-by-angle o eps)
-     (core/group-endpoints-by-angle)
-     (merge-angle-sorted-endpoints)
-     (compute-hull-vertices o dist segs)
-     (compute-hull-surfaces o dist)
-     (conj [segs]))
-    ))
+        eps (->> (build-endpoint-list segs)
+                 (core/sort-endpoints-by-angle o)
+                 (core/group-endpoints-by-angle)
+                 (merge-angle-sorted-endpoints)
+                 (compute-hull-vertices o dist segs))
+        surfs (compute-hull-surfaces o dist eps)]
+    
+    {:endpoints eps 
+     :hull      surfs
+     :subgeom   segs}
+    )
+  )
