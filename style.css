@@ -1,3 +1,7 @@
+body {
+    background: url("./texture.png")
+}
+
 div[name='pie_group'] {
     display: none;
 }
