@@ -99,20 +99,24 @@
   [{:keys [width height segs eps hull x y context dynamic dist alpha apperture algo]}]
   (let [[drawdata _ _allsegs] dynamic
         o                       (g2d/vec2d x y)
-        erase-color             "grey"]
+        erase-color             "#2D2D2D"]
     (draw/draw-rect context 0 0 width height erase-color)
     (if (get-in @state [:debug :show-geom])
       (draw/draw-geometry context drawdata))
     (if (get-in @state [:debug :show-sub-geom])
       (draw/draw-segments context segs))
     (draw/draw-hull-as-surfaces context hull)
-    (cond
-     (= algo :pie) (draw/draw-pie context x y dist (-> (- alpha apperture) (g2d/-pi+pi->0+2pi)) (-> (+ alpha apperture) (g2d/-pi+pi->0+2pi)))
-     (= algo :spot) (draw/draw-circle context x y dist)
-     )
+    (if (get-in @state [:debug :show-outline])
+      (cond
+       (= algo :pie) (draw/draw-pie context x y dist (-> (- alpha apperture) (g2d/-pi+pi->0+2pi)) (-> (+ alpha apperture) (g2d/-pi+pi->0+2pi)))
+       (= algo :spot) (draw/draw-circle context x y dist)
+       )
+      )
     (if (get-in @state [:debug :show-ep])
       (draw/draw-hull-vertices context eps))
-    (draw/draw-point context o "lightblue")
+    (if (get-in @state [:debug :show-position])
+      (draw/draw-point context o "lightblue")
+      )
     ))
 
 (defn- build-data
@@ -204,7 +208,9 @@
                     :chan      (chan)
                     :debug {:show-ep       true
                             :show-geom     false
-                            :show-sub-geom false}}))
+                            :show-sub-geom false
+                            :show-position true
+                            :show-outline  true}}))
 
 (defn comp-fake []
   (fn []
@@ -351,6 +357,22 @@
        ]
       [:label.cell "geometry"]
       ]
+     
+     [:div.row.btn-secondary
+      [:div.btn-group.cell {:data-toggle "buttons"}
+       [comp-debug-check (debug-fn [:debug :show-position])]
+       ]
+      [:label.cell "position"]
+      ]
+
+     (if (not= (get-in @state [:algo]) :global)
+         [:div.row.btn-secondary
+          [:div.btn-group.cell {:data-toggle "buttons"}
+           [comp-debug-check (debug-fn [:debug :show-outline])]
+           ]
+          [:label.cell "outline"]
+          ]
+         )
      ]
     ]
    ]
