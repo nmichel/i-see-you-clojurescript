@@ -7,23 +7,23 @@ goog.require('cljs_intro.g2d');
  * Select segments for which absolute distance to m is lower than or equal to d
  */
 cljs_intro.spot.select_segments = (function cljs_intro$spot$select_segments(m,d,segments){
-return cljs.core.filter.call(null,(function (p1__23761_SHARP_){
-var sd = Math.abs(cljs_intro.g2d.distance_to_segment.call(null,p1__23761_SHARP_,m));
+return cljs.core.filter.call(null,(function (p1__26658_SHARP_){
+var sd = Math.abs(cljs_intro.g2d.distance_to_segment.call(null,p1__26658_SHARP_,m));
 return ((sd < d)) && ((sd > (0)));
 }),segments);
 });
 /**
  * Trim segment s with respect to circle c
  */
-cljs_intro.spot.trim_segment = (function cljs_intro$spot$trim_segment(p__23762,c){
-var map__23766 = p__23762;
-var map__23766__$1 = ((((!((map__23766 == null)))?((((map__23766.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23766.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23766):map__23766);
-var s = map__23766__$1;
-var a = cljs.core.get.call(null,map__23766__$1,new cljs.core.Keyword(null,"a","a",-2123407586));
-var b = cljs.core.get.call(null,map__23766__$1,new cljs.core.Keyword(null,"b","b",1482224470));
-var vec__23768 = cljs_intro.g2d.intersection_segment_circle.call(null,c,s);
-var col_QMARK_ = cljs.core.nth.call(null,vec__23768,(0),null);
-var cols = cljs.core.nth.call(null,vec__23768,(1),null);
+cljs_intro.spot.trim_segment = (function cljs_intro$spot$trim_segment(p__26659,c){
+var map__26663 = p__26659;
+var map__26663__$1 = ((((!((map__26663 == null)))?((((map__26663.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26663.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26663):map__26663);
+var s = map__26663__$1;
+var a = cljs.core.get.call(null,map__26663__$1,new cljs.core.Keyword(null,"a","a",-2123407586));
+var b = cljs.core.get.call(null,map__26663__$1,new cljs.core.Keyword(null,"b","b",1482224470));
+var vec__26665 = cljs_intro.g2d.intersection_segment_circle.call(null,c,s);
+var col_QMARK_ = cljs.core.nth.call(null,vec__26665,(0),null);
+var cols = cljs.core.nth.call(null,vec__26665,(1),null);
 if(cljs.core.truth_(col_QMARK_)){
 var ta = (((cols.call(null,new cljs.core.Keyword(null,"t1","t1",24972444)) == null))?a:cljs_intro.g2d.stretch.call(null,s,cols.call(null,new cljs.core.Keyword(null,"t1","t1",24972444))));
 var tb = (((cols.call(null,new cljs.core.Keyword(null,"t2","t2",-748855222)) == null))?b:cljs_intro.g2d.stretch.call(null,s,cols.call(null,new cljs.core.Keyword(null,"t2","t2",-748855222))));
@@ -40,20 +40,20 @@ return null;
 cljs_intro.spot.trim_segments = (function cljs_intro$spot$trim_segments(m,d,segments){
 var c = cljs_intro.g2d.circle.call(null,m,d);
 return cljs.core.map.call(null,((function (c){
-return (function (p1__23769_SHARP_){
-return cljs_intro.spot.trim_segment.call(null,p1__23769_SHARP_,c);
+return (function (p1__26666_SHARP_){
+return cljs_intro.spot.trim_segment.call(null,p1__26666_SHARP_,c);
 });})(c))
 ,segments);
 });
 cljs_intro.spot.build_endpoint_list = (function cljs_intro$spot$build_endpoint_list(segments){
-return cljs.core.reduce.call(null,(function (acc,p__23773){
-var map__23774 = p__23773;
-var map__23774__$1 = ((((!((map__23774 == null)))?((((map__23774.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23774.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23774):map__23774);
-var s = map__23774__$1;
-var a = cljs.core.get.call(null,map__23774__$1,new cljs.core.Keyword(null,"a","a",-2123407586));
-var b = cljs.core.get.call(null,map__23774__$1,new cljs.core.Keyword(null,"b","b",1482224470));
-var ma = cljs.core.get.call(null,map__23774__$1,new cljs.core.Keyword(null,"ma","ma",-2131895229));
-var mb = cljs.core.get.call(null,map__23774__$1,new cljs.core.Keyword(null,"mb","mb",1534459853));
+return cljs.core.reduce.call(null,(function (acc,p__26670){
+var map__26671 = p__26670;
+var map__26671__$1 = ((((!((map__26671 == null)))?((((map__26671.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26671.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26671):map__26671);
+var s = map__26671__$1;
+var a = cljs.core.get.call(null,map__26671__$1,new cljs.core.Keyword(null,"a","a",-2123407586));
+var b = cljs.core.get.call(null,map__26671__$1,new cljs.core.Keyword(null,"b","b",1482224470));
+var ma = cljs.core.get.call(null,map__26671__$1,new cljs.core.Keyword(null,"ma","ma",-2131895229));
+var mb = cljs.core.get.call(null,map__26671__$1,new cljs.core.Keyword(null,"mb","mb",1534459853));
 return cljs.core.conj.call(null,acc,cljs_intro.core.qualify_endpoint_geom.call(null,cljs_intro.g2d.endpoint.call(null,a,new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [s], null)),ma),cljs_intro.core.qualify_endpoint_geom.call(null,cljs_intro.g2d.endpoint.call(null,b,new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [s], null)),mb));
 }),cljs.core.PersistentVector.EMPTY,segments);
 });
@@ -72,28 +72,28 @@ return cljs.core.conj.call(null,acc,a);
 var b = cljs.core.first.call(null,atail);
 var btail = cljs.core.rest.call(null,atail);
 if(cljs.core.not_EQ_.call(null,a.call(null,new cljs.core.Keyword(null,"point","point",1813198264)),b.call(null,new cljs.core.Keyword(null,"point","point",1813198264)))){
-var G__23786 = cljs.core.conj.call(null,acc,a);
-var G__23787 = atail;
-acc = G__23786;
-pts = G__23787;
+var G__26683 = cljs.core.conj.call(null,acc,a);
+var G__26684 = atail;
+acc = G__26683;
+pts = G__26684;
 continue;
 } else {
-var map__23781 = a;
-var map__23781__$1 = ((((!((map__23781 == null)))?((((map__23781.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23781.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23781):map__23781);
-var pa = cljs.core.get.call(null,map__23781__$1,new cljs.core.Keyword(null,"point","point",1813198264));
-var sas = cljs.core.get.call(null,map__23781__$1,new cljs.core.Keyword(null,"segments","segments",1937535949));
-var map__23782 = b;
-var map__23782__$1 = ((((!((map__23782 == null)))?((((map__23782.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23782.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23782):map__23782);
-var pb = cljs.core.get.call(null,map__23782__$1,new cljs.core.Keyword(null,"point","point",1813198264));
-var vec__23783 = cljs.core.get.call(null,map__23782__$1,new cljs.core.Keyword(null,"segments","segments",1937535949));
-var sb = cljs.core.nth.call(null,vec__23783,(0),null);
+var map__26678 = a;
+var map__26678__$1 = ((((!((map__26678 == null)))?((((map__26678.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26678.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26678):map__26678);
+var pa = cljs.core.get.call(null,map__26678__$1,new cljs.core.Keyword(null,"point","point",1813198264));
+var sas = cljs.core.get.call(null,map__26678__$1,new cljs.core.Keyword(null,"segments","segments",1937535949));
+var map__26679 = b;
+var map__26679__$1 = ((((!((map__26679 == null)))?((((map__26679.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26679.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26679):map__26679);
+var pb = cljs.core.get.call(null,map__26679__$1,new cljs.core.Keyword(null,"point","point",1813198264));
+var vec__26680 = cljs.core.get.call(null,map__26679__$1,new cljs.core.Keyword(null,"segments","segments",1937535949));
+var sb = cljs.core.nth.call(null,vec__26680,(0),null);
 var c = cljs_intro.core.find_other_end.call(null,sb,pb);
 var sa2 = cljs_intro.g2d.segment.call(null,pa,c);
 var newa = cljs.core.assoc.call(null,a,new cljs.core.Keyword(null,"segments","segments",1937535949),cljs.core.conj.call(null,sas,sa2));
-var G__23788 = cljs.core.conj.call(null,acc,newa);
-var G__23789 = btail;
-acc = G__23788;
-pts = G__23789;
+var G__26685 = cljs.core.conj.call(null,acc,newa);
+var G__26686 = btail;
+acc = G__26685;
+pts = G__26686;
 continue;
 }
 
@@ -103,27 +103,27 @@ break;
 }
 });
 cljs_intro.spot.merge_angle_sorted_endpoints = (function cljs_intro$spot$merge_angle_sorted_endpoints(eps_by_angle){
-var iter__17116__auto__ = (function cljs_intro$spot$merge_angle_sorted_endpoints_$_iter__23798(s__23799){
+var iter__17116__auto__ = (function cljs_intro$spot$merge_angle_sorted_endpoints_$_iter__26695(s__26696){
 return (new cljs.core.LazySeq(null,(function (){
-var s__23799__$1 = s__23799;
+var s__26696__$1 = s__26696;
 while(true){
-var temp__4425__auto__ = cljs.core.seq.call(null,s__23799__$1);
+var temp__4425__auto__ = cljs.core.seq.call(null,s__26696__$1);
 if(temp__4425__auto__){
-var s__23799__$2 = temp__4425__auto__;
-if(cljs.core.chunked_seq_QMARK_.call(null,s__23799__$2)){
-var c__17114__auto__ = cljs.core.chunk_first.call(null,s__23799__$2);
+var s__26696__$2 = temp__4425__auto__;
+if(cljs.core.chunked_seq_QMARK_.call(null,s__26696__$2)){
+var c__17114__auto__ = cljs.core.chunk_first.call(null,s__26696__$2);
 var size__17115__auto__ = cljs.core.count.call(null,c__17114__auto__);
-var b__23801 = cljs.core.chunk_buffer.call(null,size__17115__auto__);
-if((function (){var i__23800 = (0);
+var b__26698 = cljs.core.chunk_buffer.call(null,size__17115__auto__);
+if((function (){var i__26697 = (0);
 while(true){
-if((i__23800 < size__17115__auto__)){
-var vec__23804 = cljs.core._nth.call(null,c__17114__auto__,i__23800);
-var angle = cljs.core.nth.call(null,vec__23804,(0),null);
-var eps = cljs.core.nth.call(null,vec__23804,(1),null);
-cljs.core.chunk_append.call(null,b__23801,new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [angle,cljs_intro.spot.merge_sorted_endpoints.call(null,eps)], null));
+if((i__26697 < size__17115__auto__)){
+var vec__26701 = cljs.core._nth.call(null,c__17114__auto__,i__26697);
+var angle = cljs.core.nth.call(null,vec__26701,(0),null);
+var eps = cljs.core.nth.call(null,vec__26701,(1),null);
+cljs.core.chunk_append.call(null,b__26698,new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [angle,cljs_intro.spot.merge_sorted_endpoints.call(null,eps)], null));
 
-var G__23806 = (i__23800 + (1));
-i__23800 = G__23806;
+var G__26703 = (i__26697 + (1));
+i__26697 = G__26703;
 continue;
 } else {
 return true;
@@ -131,15 +131,15 @@ return true;
 break;
 }
 })()){
-return cljs.core.chunk_cons.call(null,cljs.core.chunk.call(null,b__23801),cljs_intro$spot$merge_angle_sorted_endpoints_$_iter__23798.call(null,cljs.core.chunk_rest.call(null,s__23799__$2)));
+return cljs.core.chunk_cons.call(null,cljs.core.chunk.call(null,b__26698),cljs_intro$spot$merge_angle_sorted_endpoints_$_iter__26695.call(null,cljs.core.chunk_rest.call(null,s__26696__$2)));
 } else {
-return cljs.core.chunk_cons.call(null,cljs.core.chunk.call(null,b__23801),null);
+return cljs.core.chunk_cons.call(null,cljs.core.chunk.call(null,b__26698),null);
 }
 } else {
-var vec__23805 = cljs.core.first.call(null,s__23799__$2);
-var angle = cljs.core.nth.call(null,vec__23805,(0),null);
-var eps = cljs.core.nth.call(null,vec__23805,(1),null);
-return cljs.core.cons.call(null,new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [angle,cljs_intro.spot.merge_sorted_endpoints.call(null,eps)], null),cljs_intro$spot$merge_angle_sorted_endpoints_$_iter__23798.call(null,cljs.core.rest.call(null,s__23799__$2)));
+var vec__26702 = cljs.core.first.call(null,s__26696__$2);
+var angle = cljs.core.nth.call(null,vec__26702,(0),null);
+var eps = cljs.core.nth.call(null,vec__26702,(1),null);
+return cljs.core.cons.call(null,new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [angle,cljs_intro.spot.merge_sorted_endpoints.call(null,eps)], null),cljs_intro$spot$merge_angle_sorted_endpoints_$_iter__26695.call(null,cljs.core.rest.call(null,s__26696__$2)));
 }
 } else {
 return null;
@@ -150,29 +150,29 @@ break;
 });
 return iter__17116__auto__.call(null,eps_by_angle);
 });
-cljs_intro.spot.compute_far_point = (function cljs_intro$spot$compute_far_point(p__23807,d){
-var map__23810 = p__23807;
-var map__23810__$1 = ((((!((map__23810 == null)))?((((map__23810.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23810.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23810):map__23810);
-var o = cljs.core.get.call(null,map__23810__$1,new cljs.core.Keyword(null,"o","o",-1350007228));
-var p = cljs.core.get.call(null,map__23810__$1,new cljs.core.Keyword(null,"p","p",151049309));
+cljs_intro.spot.compute_far_point = (function cljs_intro$spot$compute_far_point(p__26704,d){
+var map__26707 = p__26704;
+var map__26707__$1 = ((((!((map__26707 == null)))?((((map__26707.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26707.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26707):map__26707);
+var o = cljs.core.get.call(null,map__26707__$1,new cljs.core.Keyword(null,"o","o",-1350007228));
+var p = cljs.core.get.call(null,map__26707__$1,new cljs.core.Keyword(null,"p","p",151049309));
 var po = cljs_intro.g2d.minus.call(null,p,o);
 var l = cljs_intro.g2d.magnitude.call(null,po);
 var n = cljs_intro.g2d.scale.call(null,po,(1.0 / l));
 var p__$1 = cljs_intro.g2d.plus.call(null,o,cljs_intro.g2d.scale.call(null,n,d));
 return new cljs.core.PersistentArrayMap(null, 2, [new cljs.core.Keyword(null,"p","p",151049309),p__$1,new cljs.core.Keyword(null,"f","f",-1597136552),(d / l)], null);
 });
-cljs_intro.spot.process_one_endpoint = (function cljs_intro$spot$process_one_endpoint(o,dist,segments,p__23812){
-var map__23816 = p__23812;
-var map__23816__$1 = ((((!((map__23816 == null)))?((((map__23816.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23816.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23816):map__23816);
-var ep = map__23816__$1;
-var point = cljs.core.get.call(null,map__23816__$1,new cljs.core.Keyword(null,"point","point",1813198264));
-var angle = cljs.core.get.call(null,map__23816__$1,new cljs.core.Keyword(null,"angle","angle",1622094254));
-var geom = cljs.core.get.call(null,map__23816__$1,new cljs.core.Keyword(null,"geom","geom",1207084371));
+cljs_intro.spot.process_one_endpoint = (function cljs_intro$spot$process_one_endpoint(o,dist,segments,p__26709){
+var map__26713 = p__26709;
+var map__26713__$1 = ((((!((map__26713 == null)))?((((map__26713.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26713.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26713):map__26713);
+var ep = map__26713__$1;
+var point = cljs.core.get.call(null,map__26713__$1,new cljs.core.Keyword(null,"point","point",1813198264));
+var angle = cljs.core.get.call(null,map__26713__$1,new cljs.core.Keyword(null,"angle","angle",1622094254));
+var geom = cljs.core.get.call(null,map__26713__$1,new cljs.core.Keyword(null,"geom","geom",1207084371));
 var ray = cljs_intro.g2d.ray.call(null,o,point);
 var tested_segs = cljs_intro.core.compute_non_bearing_segments_list.call(null,new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [ep], null),segments);
-var vec__23818 = cljs_intro.core.compute_ray_segments_intersections.call(null,ray,tested_segs);
-var c = cljs.core.nth.call(null,vec__23818,(0),null);
-var cols = vec__23818;
+var vec__26715 = cljs_intro.core.compute_ray_segments_intersections.call(null,ray,tested_segs);
+var c = cljs.core.nth.call(null,vec__26715,(0),null);
+var cols = vec__26715;
 var classif = cljs_intro.core.classify_endpoint.call(null,ray,ep);
 if(((c == null)) && (cljs.core._EQ_.call(null,geom,new cljs.core.Keyword(null,"inter","inter",-2036694714)))){
 return new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs_intro.core.qualify_endpoint_role.call(null,ep,classif)], null);
@@ -197,40 +197,40 @@ return null;
 }
 }
 });
-cljs_intro.spot.process_many_endpoint = (function cljs_intro$spot$process_many_endpoint(o,dist,segments,p__23820){
-var vec__23832 = p__23820;
-var map__23833 = cljs.core.nth.call(null,vec__23832,(0),null);
-var map__23833__$1 = ((((!((map__23833 == null)))?((((map__23833.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23833.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23833):map__23833);
-var point = cljs.core.get.call(null,map__23833__$1,new cljs.core.Keyword(null,"point","point",1813198264));
-var angle = cljs.core.get.call(null,map__23833__$1,new cljs.core.Keyword(null,"angle","angle",1622094254));
-var eps = vec__23832;
+cljs_intro.spot.process_many_endpoint = (function cljs_intro$spot$process_many_endpoint(o,dist,segments,p__26717){
+var vec__26729 = p__26717;
+var map__26730 = cljs.core.nth.call(null,vec__26729,(0),null);
+var map__26730__$1 = ((((!((map__26730 == null)))?((((map__26730.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26730.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26730):map__26730);
+var point = cljs.core.get.call(null,map__26730__$1,new cljs.core.Keyword(null,"point","point",1813198264));
+var angle = cljs.core.get.call(null,map__26730__$1,new cljs.core.Keyword(null,"angle","angle",1622094254));
+var eps = vec__26729;
 var ray = cljs_intro.g2d.ray.call(null,o,point);
-var eps_with_classif = cljs.core.map.call(null,((function (ray,vec__23832,map__23833,map__23833__$1,point,angle,eps){
+var eps_with_classif = cljs.core.map.call(null,((function (ray,vec__26729,map__26730,map__26730__$1,point,angle,eps){
 return (function (e){
 return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs_intro.core.classify_endpoint.call(null,ray,e),e], null);
-});})(ray,vec__23832,map__23833,map__23833__$1,point,angle,eps))
+});})(ray,vec__26729,map__26730,map__26730__$1,point,angle,eps))
 ,eps);
-var eps_wo_first_collinear = cljs.core.drop_while.call(null,((function (ray,eps_with_classif,vec__23832,map__23833,map__23833__$1,point,angle,eps){
-return (function (p1__23819_SHARP_){
-return cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"collinear","collinear",1159767033),cljs.core.nth.call(null,p1__23819_SHARP_,(0)));
-});})(ray,eps_with_classif,vec__23832,map__23833,map__23833__$1,point,angle,eps))
+var eps_wo_first_collinear = cljs.core.drop_while.call(null,((function (ray,eps_with_classif,vec__26729,map__26730,map__26730__$1,point,angle,eps){
+return (function (p1__26716_SHARP_){
+return cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"collinear","collinear",1159767033),cljs.core.nth.call(null,p1__26716_SHARP_,(0)));
+});})(ray,eps_with_classif,vec__26729,map__26730,map__26730__$1,point,angle,eps))
 ,eps_with_classif);
 if(cljs.core.empty_QMARK_.call(null,eps_wo_first_collinear)){
 return cljs.core.PersistentVector.EMPTY;
 } else {
 var tested_segs = cljs_intro.core.compute_non_bearing_segments_list.call(null,eps,segments);
 var cols = cljs_intro.core.compute_ray_segments_intersections.call(null,ray,tested_segs);
-var vec__23835 = cljs.core.first.call(null,eps_wo_first_collinear);
-var c1 = cljs.core.nth.call(null,vec__23835,(0),null);
-var ep1 = cljs.core.nth.call(null,vec__23835,(1),null);
-var e1 = vec__23835;
-var vec__23836 = ((cljs.core.empty_QMARK_.call(null,cols))?(function (){var fp = cljs_intro.spot.compute_far_point.call(null,ray,dist);
+var vec__26732 = cljs.core.first.call(null,eps_wo_first_collinear);
+var c1 = cljs.core.nth.call(null,vec__26732,(0),null);
+var ep1 = cljs.core.nth.call(null,vec__26732,(1),null);
+var e1 = vec__26732;
+var vec__26733 = ((cljs.core.empty_QMARK_.call(null,cols))?(function (){var fp = cljs_intro.spot.compute_far_point.call(null,ray,dist);
 return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs_intro.core.qualify_endpoint_angle.call(null,cljs_intro.core.qualify_endpoint_geom.call(null,cljs_intro.g2d.endpoint.call(null,new cljs.core.Keyword(null,"p","p",151049309).cljs$core$IFn$_invoke$arity$1(fp),cljs.core.PersistentVector.EMPTY),new cljs.core.Keyword(null,"farpoint","farpoint",464801688)),angle),new cljs.core.Keyword(null,"f","f",-1597136552).cljs$core$IFn$_invoke$arity$1(fp)], null);
 })():(function (){var gp = cljs.core.first.call(null,cols);
 return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs_intro.core.qualify_endpoint_angle.call(null,cljs_intro.core.qualify_endpoint_geom.call(null,cljs_intro.g2d.endpoint.call(null,new cljs.core.Keyword(null,"p","p",151049309).cljs$core$IFn$_invoke$arity$1(gp),cljs.core.PersistentVector.EMPTY),new cljs.core.Keyword(null,"collision","collision",-201625508)),angle),new cljs.core.Keyword(null,"f","f",-1597136552).cljs$core$IFn$_invoke$arity$1(gp)], null);
 })());
-var col = cljs.core.nth.call(null,vec__23836,(0),null);
-var fcol = cljs.core.nth.call(null,vec__23836,(1),null);
+var col = cljs.core.nth.call(null,vec__26733,(0),null);
+var fcol = cljs.core.nth.call(null,vec__26733,(1),null);
 if((fcol < (1))){
 return new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs_intro.core.qualify_endpoint_role.call(null,col,new cljs.core.Keyword(null,"collision","collision",-201625508))], null);
 } else {
@@ -238,15 +238,15 @@ if(cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"cross","cross",194557789
 return new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs_intro.core.qualify_endpoint_role.call(null,ep1,new cljs.core.Keyword(null,"cross","cross",194557789))], null);
 } else {
 if(cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"out","out",-910545517),c1)){
-var vec__23837 = cljs.core.first.call(null,cljs.core.filter.call(null,((function (vec__23836,col,fcol,tested_segs,cols,vec__23835,c1,ep1,e1,ray,eps_with_classif,eps_wo_first_collinear,vec__23832,map__23833,map__23833__$1,point,angle,eps){
-return (function (p__23838){
-var vec__23839 = p__23838;
-var c2 = cljs.core.nth.call(null,vec__23839,(0),null);
+var vec__26734 = cljs.core.first.call(null,cljs.core.filter.call(null,((function (vec__26733,col,fcol,tested_segs,cols,vec__26732,c1,ep1,e1,ray,eps_with_classif,eps_wo_first_collinear,vec__26729,map__26730,map__26730__$1,point,angle,eps){
+return (function (p__26735){
+var vec__26736 = p__26735;
+var c2 = cljs.core.nth.call(null,vec__26736,(0),null);
 return (cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"in","in",-1531184865),c2)) || (cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"cross","cross",194557789),c2));
-});})(vec__23836,col,fcol,tested_segs,cols,vec__23835,c1,ep1,e1,ray,eps_with_classif,eps_wo_first_collinear,vec__23832,map__23833,map__23833__$1,point,angle,eps))
+});})(vec__26733,col,fcol,tested_segs,cols,vec__26732,c1,ep1,e1,ray,eps_with_classif,eps_wo_first_collinear,vec__26729,map__26730,map__26730__$1,point,angle,eps))
 ,cljs.core.rest.call(null,eps_wo_first_collinear)));
-var c2 = cljs.core.nth.call(null,vec__23837,(0),null);
-var p2 = cljs.core.nth.call(null,vec__23837,(1),null);
+var c2 = cljs.core.nth.call(null,vec__26734,(0),null);
+var p2 = cljs.core.nth.call(null,vec__26734,(1),null);
 if((c2 == null)){
 return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs_intro.core.qualify_endpoint_role.call(null,ep1,new cljs.core.Keyword(null,"out","out",-910545517)),cljs_intro.core.qualify_endpoint_role.call(null,col,new cljs.core.Keyword(null,"in","in",-1531184865))], null);
 } else {
@@ -261,15 +261,15 @@ return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMP
 }
 } else {
 if(cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"in","in",-1531184865),c1)){
-var vec__23840 = cljs.core.first.call(null,cljs.core.filter.call(null,((function (vec__23836,col,fcol,tested_segs,cols,vec__23835,c1,ep1,e1,ray,eps_with_classif,eps_wo_first_collinear,vec__23832,map__23833,map__23833__$1,point,angle,eps){
-return (function (p__23841){
-var vec__23842 = p__23841;
-var c2 = cljs.core.nth.call(null,vec__23842,(0),null);
+var vec__26737 = cljs.core.first.call(null,cljs.core.filter.call(null,((function (vec__26733,col,fcol,tested_segs,cols,vec__26732,c1,ep1,e1,ray,eps_with_classif,eps_wo_first_collinear,vec__26729,map__26730,map__26730__$1,point,angle,eps){
+return (function (p__26738){
+var vec__26739 = p__26738;
+var c2 = cljs.core.nth.call(null,vec__26739,(0),null);
 return (cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"out","out",-910545517),c2)) || (cljs.core._EQ_.call(null,new cljs.core.Keyword(null,"cross","cross",194557789),c2));
-});})(vec__23836,col,fcol,tested_segs,cols,vec__23835,c1,ep1,e1,ray,eps_with_classif,eps_wo_first_collinear,vec__23832,map__23833,map__23833__$1,point,angle,eps))
+});})(vec__26733,col,fcol,tested_segs,cols,vec__26732,c1,ep1,e1,ray,eps_with_classif,eps_wo_first_collinear,vec__26729,map__26730,map__26730__$1,point,angle,eps))
 ,cljs.core.rest.call(null,eps_wo_first_collinear)));
-var c2 = cljs.core.nth.call(null,vec__23840,(0),null);
-var p2 = cljs.core.nth.call(null,vec__23840,(1),null);
+var c2 = cljs.core.nth.call(null,vec__26737,(0),null);
+var p2 = cljs.core.nth.call(null,vec__26737,(1),null);
 if((c2 == null)){
 return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs_intro.core.qualify_endpoint_role.call(null,col,new cljs.core.Keyword(null,"in","in",-1531184865)),cljs_intro.core.qualify_endpoint_role.call(null,ep1,new cljs.core.Keyword(null,"out","out",-910545517))], null);
 } else {
@@ -309,10 +309,10 @@ return null;
  *   
  */
 cljs_intro.spot.compute_hull_vertices = (function cljs_intro$spot$compute_hull_vertices(o,dist,segs,eps_by_angle){
-return cljs.core.mapcat.call(null,(function (p__23845){
-var vec__23846 = p__23845;
-var angle = cljs.core.nth.call(null,vec__23846,(0),null);
-var eps = cljs.core.nth.call(null,vec__23846,(1),null);
+return cljs.core.mapcat.call(null,(function (p__26742){
+var vec__26743 = p__26742;
+var angle = cljs.core.nth.call(null,vec__26743,(0),null);
+var eps = cljs.core.nth.call(null,vec__26743,(1),null);
 if(cljs.core._EQ_.call(null,(1),cljs.core.count.call(null,eps))){
 return cljs_intro.spot.process_one_endpoint.call(null,o,dist,segs,cljs.core.first.call(null,eps));
 } else {
@@ -335,32 +335,33 @@ return cljs_intro.spot.process_many_endpoint.call(null,o,dist,segs,eps);
  */
 cljs_intro.spot.compute_hull_surfaces = (function cljs_intro$spot$compute_hull_surfaces(o,dist,eps){
 if(cljs.core.empty_QMARK_.call(null,eps)){
-return cljs.core.PersistentVector.EMPTY;
+var ep = cljs_intro.core.qualify_endpoint_geom.call(null,cljs_intro.g2d.endpoint.call(null,cljs_intro.g2d.plus.call(null,o,cljs_intro.g2d.vec2d.call(null,(0),dist)),cljs.core.PersistentVector.EMPTY),new cljs.core.Keyword(null,"farpoint","farpoint",464801688));
+return new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [new cljs.core.PersistentVector(null, 5, 5, cljs.core.PersistentVector.EMPTY_NODE, [new cljs.core.Keyword(null,"arc","arc",252411045),o,cljs_intro.core.qualify_endpoint_angle.call(null,ep,(0)),cljs_intro.core.qualify_endpoint_angle.call(null,ep,((2) * Math.PI)),dist], null)], null);
 } else {
-var pts = cljs.core.drop_while.call(null,(function (p__23857){
-var map__23858 = p__23857;
-var map__23858__$1 = ((((!((map__23858 == null)))?((((map__23858.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23858.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23858):map__23858);
-var role = cljs.core.get.call(null,map__23858__$1,new cljs.core.Keyword(null,"role","role",-736691072));
+var pts = cljs.core.drop_while.call(null,(function (p__26754){
+var map__26755 = p__26754;
+var map__26755__$1 = ((((!((map__26755 == null)))?((((map__26755.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26755.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26755):map__26755);
+var role = cljs.core.get.call(null,map__26755__$1,new cljs.core.Keyword(null,"role","role",-736691072));
 return cljs.core._EQ_.call(null,role,new cljs.core.Keyword(null,"collision","collision",-201625508));
 }),cljs.core.cycle.call(null,eps));
 return cljs.core.nth.call(null,cljs.core.reduce.call(null,((function (pts){
-return (function (p__23860,p__23861){
-var vec__23862 = p__23860;
-var acc = cljs.core.nth.call(null,vec__23862,(0),null);
-var map__23863 = cljs.core.nth.call(null,vec__23862,(1),null);
-var map__23863__$1 = ((((!((map__23863 == null)))?((((map__23863.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23863.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23863):map__23863);
-var epa = map__23863__$1;
-var a = cljs.core.get.call(null,map__23863__$1,new cljs.core.Keyword(null,"point","point",1813198264));
-var angle_a = cljs.core.get.call(null,map__23863__$1,new cljs.core.Keyword(null,"angle","angle",1622094254));
-var geom_a = cljs.core.get.call(null,map__23863__$1,new cljs.core.Keyword(null,"geom","geom",1207084371));
-var role_a = cljs.core.get.call(null,map__23863__$1,new cljs.core.Keyword(null,"role","role",-736691072));
-var map__23864 = p__23861;
-var map__23864__$1 = ((((!((map__23864 == null)))?((((map__23864.cljs$lang$protocol_mask$partition0$ & (64))) || (map__23864.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__23864):map__23864);
-var epb = map__23864__$1;
-var b = cljs.core.get.call(null,map__23864__$1,new cljs.core.Keyword(null,"point","point",1813198264));
-var angle_b = cljs.core.get.call(null,map__23864__$1,new cljs.core.Keyword(null,"angle","angle",1622094254));
-var geom_b = cljs.core.get.call(null,map__23864__$1,new cljs.core.Keyword(null,"geom","geom",1207084371));
-var role_b = cljs.core.get.call(null,map__23864__$1,new cljs.core.Keyword(null,"role","role",-736691072));
+return (function (p__26757,p__26758){
+var vec__26759 = p__26757;
+var acc = cljs.core.nth.call(null,vec__26759,(0),null);
+var map__26760 = cljs.core.nth.call(null,vec__26759,(1),null);
+var map__26760__$1 = ((((!((map__26760 == null)))?((((map__26760.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26760.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26760):map__26760);
+var epa = map__26760__$1;
+var a = cljs.core.get.call(null,map__26760__$1,new cljs.core.Keyword(null,"point","point",1813198264));
+var angle_a = cljs.core.get.call(null,map__26760__$1,new cljs.core.Keyword(null,"angle","angle",1622094254));
+var geom_a = cljs.core.get.call(null,map__26760__$1,new cljs.core.Keyword(null,"geom","geom",1207084371));
+var role_a = cljs.core.get.call(null,map__26760__$1,new cljs.core.Keyword(null,"role","role",-736691072));
+var map__26761 = p__26758;
+var map__26761__$1 = ((((!((map__26761 == null)))?((((map__26761.cljs$lang$protocol_mask$partition0$ & (64))) || (map__26761.cljs$core$ISeq$))?true:false):false))?cljs.core.apply.call(null,cljs.core.hash_map,map__26761):map__26761);
+var epb = map__26761__$1;
+var b = cljs.core.get.call(null,map__26761__$1,new cljs.core.Keyword(null,"point","point",1813198264));
+var angle_b = cljs.core.get.call(null,map__26761__$1,new cljs.core.Keyword(null,"angle","angle",1622094254));
+var geom_b = cljs.core.get.call(null,map__26761__$1,new cljs.core.Keyword(null,"geom","geom",1207084371));
+var role_b = cljs.core.get.call(null,map__26761__$1,new cljs.core.Keyword(null,"role","role",-736691072));
 if(cljs.core._EQ_.call(null,angle_a,angle_b)){
 return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [acc,epb], null);
 } else {
@@ -384,11 +385,11 @@ return new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMP
  *   the sequences of surface defining the visibility hull
  *   
  */
-cljs_intro.spot.compute_visibility_hull = (function cljs_intro$spot$compute_visibility_hull(o,dist,p__23867){
-var vec__23869 = p__23867;
-var _ = cljs.core.nth.call(null,vec__23869,(0),null);
-var ___$1 = cljs.core.nth.call(null,vec__23869,(1),null);
-var segments = cljs.core.nth.call(null,vec__23869,(2),null);
+cljs_intro.spot.compute_visibility_hull = (function cljs_intro$spot$compute_visibility_hull(o,dist,p__26764){
+var vec__26766 = p__26764;
+var _ = cljs.core.nth.call(null,vec__26766,(0),null);
+var ___$1 = cljs.core.nth.call(null,vec__26766,(1),null);
+var segments = cljs.core.nth.call(null,vec__26766,(2),null);
 var segs = cljs.core.remove.call(null,cljs.core.nil_QMARK_,cljs_intro.spot.trim_segments.call(null,o,dist,cljs_intro.spot.select_segments.call(null,o,dist,segments)));
 var eps = cljs_intro.spot.compute_hull_vertices.call(null,o,dist,segs,cljs_intro.spot.merge_angle_sorted_endpoints.call(null,cljs_intro.core.group_endpoints_by_angle.call(null,cljs_intro.core.sort_endpoints_by_angle.call(null,o,cljs_intro.spot.build_endpoint_list.call(null,segs)))));
 var surfs = cljs_intro.spot.compute_hull_surfaces.call(null,o,dist,eps);
