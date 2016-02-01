@@ -233,7 +233,10 @@
   "
   [o dist eps]
   (if (empty? eps)
-    []
+
+    (let [ep (-> o (g2d/plus (g2d/vec2d 0 dist)) (g2d/endpoint []) (qualify-endpoint-geom :farpoint))]
+      [[:arc o (core/qualify-endpoint-angle ep 0) (core/qualify-endpoint-angle ep (* 2 Math/PI)) dist]])
+
     (let [pts (drop-while (fn [{role :role}] (= role :collision)) (cycle eps))] ;; Start from a non collision point (as they will be dropped)
       (->
        (reduce (fn [[acc {a :point angle_a :angle geom_a :geom role_a :role :as epa}]
@@ -287,8 +290,8 @@
                  (merge-angle-sorted-endpoints)
                  (compute-hull-vertices o dist segs))
         surfs (compute-hull-surfaces o dist eps)]
-    
-    {:endpoints eps 
+
+    {:endpoints eps
      :hull      surfs
      :subgeom   segs}
     )
